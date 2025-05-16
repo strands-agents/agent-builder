@@ -1,0 +1,67 @@
+"""Utilities for loading model providers in strands."""
+
+import importlib
+import json
+import pathlib
+from typing import Any
+
+from strands.types.models import Model
+
+
+def load_path(name: str) -> pathlib.Path:
+    """Locate the model provider module file path.
+
+    First search "$CWD/.models". If the module file is not found, fall back to the built-in models directory.
+
+    Args:
+        name: Name of the model provider (e.g., bedrock).
+
+    Returns:
+        The file path to the model provider module.
+
+    Raises:
+        ImportError: If the model provider module cannot be found.
+    """
+    path = pathlib.Path.cwd() / ".models" / f"{name}.py"
+    if not path.exists():
+        path = pathlib.Path(__file__).parent / ".." / "models" / f"{name}.py"
+
+    if not path.exists():
+        raise ImportError(f"model_provider=<{name}> | does not exist")
+
+    return path
+
+
+def load_config(config: str) -> dict[str, Any]:
+    """Load model configuration from a JSON string or file.
+
+    Args:
+        config: A JSON string or path to a JSON file containing model configuration.
+
+    Returns:
+        The parsed configuration.
+    """
+    if config.endswith(".json"):
+        with open(config) as fp:
+            return json.load(fp)
+
+    return json.loads(config)
+
+
+def load_model(path: pathlib.Path, config: dict[str, Any]) -> Model:
+    """Dynamically load and instantiate a model provider from a Python module.
+
+    Imports the module at the specified path and calls its 'instance' function
+    with the provided configuration to create a model instance.
+
+    Args:
+        path: Path to the Python module containing the model provider implementation.
+        config: Configuration to pass to the model provider's instance function.
+
+    Returns:
+        An instantiated model provider.
+    """
+    spec = importlib.util.spec_from_file_location(path.stem, str(path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.instance(**config)

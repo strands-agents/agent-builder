@@ -1,0 +1,13 @@
+__pycache__*
+.coverage
+.models
+.mypy_cache
+.prompt
+.pytest_cache
+.ruff_cache
+.welcome
+build
+*.bak
+*.egg-info
+dist
+venv
