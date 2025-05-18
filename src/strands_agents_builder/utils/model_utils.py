@@ -2,10 +2,29 @@
 
 import importlib
 import json
+import os
 import pathlib
 from typing import Any
 
+from botocore.config import Config
 from strands.types.models import Model
+
+# Default model configuration
+DEFAULT_MODEL_CONFIG = {
+    "model_id": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "max_tokens": int(os.getenv("STRANDS_MAX_TOKENS", "64000")),
+    "boto_client_config": Config(
+        read_timeout=900,
+        connect_timeout=900,
+        retries=dict(max_attempts=3, mode="adaptive"),
+    ),
+    "additional_request_fields": {
+        "thinking": {
+            "type": "enabled",
+            "budget_tokens": int(os.getenv("STRANDS_BUDGET_TOKENS", "2048")),
+        }
+    },
+}
 
 
 def load_path(name: str) -> pathlib.Path:
@@ -37,10 +56,14 @@ def load_config(config: str) -> dict[str, Any]:
 
     Args:
         config: A JSON string or path to a JSON file containing model configuration.
+            If empty string or '{}', the default config is used.
 
     Returns:
         The parsed configuration.
     """
+    if not config or config == "{}":
+        return DEFAULT_MODEL_CONFIG
+
     if config.endswith(".json"):
         with open(config) as fp:
             return json.load(fp)

@@ -39,8 +39,8 @@ from strands_agents_builder.utils.welcome_utils import render_goodbye_message, r
 
 # Custom tools, handlers, utils
 from tools import (
-    strand,
     store_in_kb,
+    strand,
     welcome,
 )
 

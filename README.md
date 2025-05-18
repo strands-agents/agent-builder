@@ -86,6 +86,50 @@ agent.tool.strand(
 )
 ```
 
+## Model Configuration
+
+### Optimized Defaults
+
+Strands comes with optimized, maxed-out configuration settings for the Bedrock model provider:
+
+```json
+{
+    "model_id": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "max_tokens": 64000,
+    "boto_client_config": {
+        "read_timeout": 900,
+        "connect_timeout": 900,
+        "retries": {
+            "max_attempts": 3,
+            "mode": "adaptive"
+        }
+    },
+    "additional_request_fields": {
+        "thinking": {
+            "type": "enabled",
+            "budget_tokens": 2048
+        }
+    }
+}
+```
+
+These settings provide:
+- Claude 3.7 Sonnet (latest high-performance model)
+- Maximum token output (64,000 tokens)
+- Extended timeouts (15 minutes) for complex operations
+- Automatic retries with adaptive backoff
+- Enabled thinking capability with 2,048 token budget for recursive reasoning
+
+You can customize these values using environment variables:
+
+```bash
+# Maximum tokens for responses
+export STRANDS_MAX_TOKENS=32000
+
+# Budget for agent thinking/reasoning
+export STRANDS_BUDGET_TOKENS=1024
+```
+
 ## Custom Model Provider
 
 You can configure strands to use a different model provider with specific settings by passing in the following arguments:
