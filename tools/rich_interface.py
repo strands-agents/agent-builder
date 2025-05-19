@@ -1,7 +1,6 @@
 import textwrap
 from typing import Any
 
-from strands.types.tools import ToolResult, ToolUse
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
@@ -10,6 +9,7 @@ from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
+from strands.types.tools import ToolResult, ToolUse
 
 TOOL_SPEC = {
     "name": "rich_interface",
