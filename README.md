@@ -1,8 +1,8 @@
-# Strands CLI
+# Strands Agent Builder
 
 > When terminal meets intelligence: AI at your fingertips.
 
-A minimalist Strands Agents-powered CLI assistant for your terminal. Strands brings the power of Claude 3.7 Sonnet to your command line with advanced tool integration and knowledge base capabilities.
+An example Strands agent demonstrating streaming, tool use, and interactivity from your terminal. This agent builder can help you to build your own agents and tools.
 
 ## Quick Start
 
