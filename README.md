@@ -166,7 +166,7 @@ You can then use it with strands by running:
 $ strands --model-provider custom_model --model-config <JSON|FILE>
 ```
 
-## Custom Systm Prompts
+## Custom System Prompts
 
 ```bash
 # Via environment variable
