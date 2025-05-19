@@ -1,8 +1,6 @@
-# Strands CLI
+# Strands Agent Builder
 
-> When terminal meets intelligence: AI at your fingertips.
-
-A minimalist Strands Agents-powered CLI assistant for your terminal. Strands brings the power of Claude 3.7 Sonnet to your command line with advanced tool integration and knowledge base capabilities.
+An interactive Strands agent toolkit designed to help you build, test, and extend your own custom AI agents and tools. With the Strands Agent Builder, you can create specialized agents, develop custom tools, and compose complex AI workflows—all from your terminal.
 
 ## Quick Start
 
@@ -10,26 +8,28 @@ A minimalist Strands Agents-powered CLI assistant for your terminal. Strands bri
 # Install
 pipx install strands-agents-builder
 
-# Run interactive mode
+# Run interactive mode for agent development
 strands
 
-# One-off query
-strands "What's the capital of France?"
+# Build a custom tool and use it immediately
+strands "Create a tool named sentiment_analyzer that analyzes text sentiment and test it with some examples"
 
-# Pipe content
-cat document.txt | strands "Summarize this"
+# Pipe content to build an agent based on specifications
+cat agent-spec.txt | strands "Build a specialized agent based on these specifications"
 
-# Use with knowledge base
-strands --kb YOUR_KB_ID "Tell me about our project"
+# Use with knowledge base to extend existing tools
+strands --kb YOUR_KB_ID "Load my previous calculator tool and enhance it with scientific functions"
 ```
 
 ## Features
 
+- 🏗️ Create and test custom tools with instant hot-reloading
+- 🤖 Build specialized agents with focused capabilities
+- 🔄 Extend existing tools and enhance their functionality
 - 💬 Interactive command-line interface with rich output
-- 🔍 One-off queries via arguments or pipes
 - 🛠️ Powerful integrated tools (12+ tools including shell, editor, HTTP, Python)
-- 🧠 Knowledge base integration for memory and context
-- 🎮 Customizable system prompt
+- 🧠 Knowledge base integration for persisting and loading tools
+- 🎮 Customizable system prompt for specialized agents
 - 🪄 Nested agent capabilities with tool delegation
 - 🔧 Dynamic tool loading for extending functionality
 - 🖥️ Environment variable management and customization
@@ -53,36 +53,40 @@ Strands comes with a comprehensive set of built-in tools:
 
 ## Knowledge Base Integration
 
-Strands can leverage Amazon Bedrock Knowledge Bases to retrieve information and remember conversations.
+Strands Agent Builder leverages Amazon Bedrock Knowledge Bases to store and retrieve custom tools, agent configurations, and development history.
 
 ```bash
-# Specify knowledge base via command line
-strands --kb YOUR_KB_ID "What does our API do?"
+# Load and extend tools from your knowledge base
+strands --kb YOUR_KB_ID "Load my data_visualizer tool and add 3D plotting capabilities"
 
 # Or set a default knowledge base via environment variable
 export STRANDS_KNOWLEDGE_BASE_ID="YOUR_KB_ID"
-strands "What were our key decisions last week?"
+strands "Find my most recent agent configuration and make it more efficient"
 ```
 
 Features:
-- 🔄 Automatic retrieval of relevant information before answering queries
-- 💾 Conversation storage for building persistent memory
-- 📝 Every exchange is stored with proper formatting for future reference
-- 🔍 Contextual awareness across multiple conversations
+- 🔄 Retrieve previously created tools and agent configurations
+- 💾 Persistent storage for your custom tools and agents
+- 🛠️ Ability to iteratively improve tools across sessions
+- 🔍 Find and extend tools built in previous sessions
 
 ## Nested Agent Capabilities
 
-Use the `strands` tool to create specialized sub-agents with their own tools and system prompts:
+Use the `strands` tool to prototype and test specialized sub-agents with their own tools and system prompts:
 
 ```python
-# Basic usage
-agent.tool.strand(query="List files in the current directory")
-
-# With specific tools
+# Create a specialized data analysis agent
 agent.tool.strand(
-    query="Analyze this Python code",
-    tool_names=["python_repl", "editor"],
-    system_prompt="You are an expert Python developer specializing in code optimization."
+    query="Build and test a data analysis agent",
+    tool_names=["python_repl", "editor", "http_request"],
+    system_prompt="You're an AI specialized in data analysis. Your task is to build tools for data processing and visualization."
+)
+
+# Create a tool-building agent focused on web automation
+agent.tool.strand(
+    query="Create a set of web automation tools for browser testing",
+    tool_names=["editor", "python_repl", "shell"],
+    system_prompt="You're an expert in creating web automation tools. Your specialty is developing reliable browser testing utilities."
 )
 ```
 
@@ -144,11 +148,7 @@ As an example, if you wanted to use the packaged Ollama provider with a specific
 strands --model-provider ollama --model-config '{"model_id": <ID>}'
 ```
 
-Strands is packaged with the following providers:
-| Name | Config |
-| ---- | ------ |
-| `bedrock` | [reference](<LINK>) |
-| `ollama` | [reference](<LINK>) |
+Strands Agent Builder is packaged with `bedrock` and `ollama`.
 
 If you have implemented a custom model provider ([instructions](<LINK>)) and would like to use it with strands, create a python module under the directory "$CWD/.models" and expose an `instance` function that returns an instance of your provider. As an example, assume you have:
 
@@ -166,7 +166,7 @@ You can then use it with strands by running:
 $ strands --model-provider custom_model --model-config <JSON|FILE>
 ```
 
-## Custom Systm Prompts
+## Custom System Prompts
 
 ```bash
 # Via environment variable
