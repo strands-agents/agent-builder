@@ -148,11 +148,7 @@ As an example, if you wanted to use the packaged Ollama provider with a specific
 strands --model-provider ollama --model-config '{"model_id": <ID>}'
 ```
 
-Strands is packaged with the following providers:
-| Name | Config |
-| ---- | ------ |
-| `bedrock` | [reference](<LINK>) |
-| `ollama` | [reference](<LINK>) |
+Strands Agent Builder is packaged with `bedrock` and `ollama`.
 
 If you have implemented a custom model provider ([instructions](<LINK>)) and would like to use it with strands, create a python module under the directory "$CWD/.models" and expose an `instance` function that returns an instance of your provider. As an example, assume you have:
 
