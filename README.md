@@ -61,7 +61,7 @@ strands --kb YOUR_KB_ID "Load my data_visualizer tool and add 3D plotting capabi
 
 # Or set a default knowledge base via environment variable
 export STRANDS_KNOWLEDGE_BASE_ID="YOUR_KB_ID"
-strands "Find my most recent agent configuration and make it more efficient"
+strands "Find my most recent agent configuration and make it more efficient."
 ```
 
 Features:
@@ -122,7 +122,7 @@ These settings provide:
 - Maximum token output (64,000 tokens)
 - Extended timeouts (15 minutes) for complex operations
 - Automatic retries with adaptive backoff
-- Enabled thinking capability with 2,048 token budget for recursive reasoning
+- Enabled thinking capability with a 2,048 token budget for recursive reasoning
 
 You can customize these values using environment variables:
 
@@ -150,7 +150,7 @@ strands --model-provider ollama --model-config '{"model_id": <ID>}'
 
 Strands Agent Builder is packaged with `bedrock` and `ollama`.
 
-If you have implemented a custom model provider ([instructions](<LINK>)) and would like to use it with strands, create a python module under the directory "$CWD/.models" and expose an `instance` function that returns an instance of your provider. As an example, assume you have:
+If you have implemented a custom model provider ([instructions](<LINK>)) and would like to use it with strands, create a Python module under the directory "$CWD/.models" and expose an `instance` function that returns an instance of your provider. As an example, assume you have:
 
 ```bash
 $ cat ./.models/custom_model.py
