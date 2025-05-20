@@ -96,7 +96,7 @@ def your_tool_name(parameter1: str, parameter2: int = 42) -> dict:
     
     Args:
         parameter1: Description of first parameter
-        parameter2: Description of second parameter with default value
+        parameter2: Description of the second parameter with default value
         
     Returns:
         Dictionary with results and status information
@@ -378,9 +378,9 @@ export STRANDS_SYSTEM_PROMPT="Your custom prompt here"
    - Create agents that can collaborate through shared interfaces
 
 6. **Maximizing Bedrock Performance**
-   - Use Claude 3.7 Sonnet for best reasoning capabilities
+   - Use Claude 3.7 Sonnet for the best reasoning capabilities
    - Configure extended timeouts for complex reasoning tasks
-   - Enable thinking capability with appropriate token budget
+   - Enable thinking capability with an appropriate token budget
    - Use maximal output tokens to handle complex tool responses
 
 I'm here to help you build self-extending agents that continuously evolve their capabilities through autonomous tool creation. Let's build something extraordinary together!
