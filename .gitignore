@@ -11,3 +11,8 @@ build
 *.egg-info
 dist
 venv
+
+notifications
+repl_state
+slack_events
+tasks
