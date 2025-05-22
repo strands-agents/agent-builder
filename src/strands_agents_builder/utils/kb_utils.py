@@ -8,7 +8,7 @@ from pathlib import Path
 
 def store_conversation_in_kb(agent, user_input, response=None, knowledge_base_id=None):
     """
-    Store conversation between user and assistant in knowledge base
+    Store conversation between user and assistant in knowledge base asynchronously
 
     Args:
         agent: Strands agent instance
@@ -75,11 +75,12 @@ def store_conversation_in_kb(agent, user_input, response=None, knowledge_base_id
         if len(user_input) > max_title_length:
             conversation_title += "..."
 
-        # Store in knowledge base
+        # Store in knowledge base asynchronously with record_direct_tool_call=False
         agent.tool.store_in_kb(
             content=conversation_content,
             title=conversation_title,
             knowledge_base_id=knowledge_base_id,
+            record_direct_tool_call=False,
         )
     except Exception as e:
         print(f"Error storing conversation in knowledge base: {str(e)}")

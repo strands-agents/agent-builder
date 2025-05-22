@@ -99,7 +99,10 @@ def test_store_conversation_in_kb():
     # Verify agent called store_in_kb with correct parameters
     expected_content = "User: Test query\n\nAssistant Reasoning: Test reasoning\n\nAssistant Response: Test response"
     mock_agent.tool.store_in_kb.assert_called_with(
-        content=expected_content, title="Conversation: Test query", knowledge_base_id="test-kb-id"
+        content=expected_content,
+        title="Conversation: Test query",
+        knowledge_base_id="test-kb-id",
+        record_direct_tool_call=False,
     )
 
 
@@ -118,7 +121,10 @@ def test_store_conversation_without_reasoning():
     # Verify agent called store_in_kb with correct parameters
     expected_content = "User: Test query\n\nAssistant: Test response"
     mock_agent.tool.store_in_kb.assert_called_with(
-        content=expected_content, title="Conversation: Test query", knowledge_base_id="test-kb-id"
+        content=expected_content,
+        title="Conversation: Test query",
+        knowledge_base_id="test-kb-id",
+        record_direct_tool_call=False,
     )
 
 
@@ -161,7 +167,10 @@ def test_store_conversation_direct_mode():
     # Verify agent called store_in_kb with just the user query
     expected_content = "User: Test query"
     mock_agent.tool.store_in_kb.assert_called_with(
-        content=expected_content, title="Conversation: Test query", knowledge_base_id="test-kb-id"
+        content=expected_content,
+        title="Conversation: Test query",
+        knowledge_base_id="test-kb-id",
+        record_direct_tool_call=False,
     )
 
 
@@ -233,4 +242,5 @@ def test_store_conversation_exception_in_response_str():
             content="User: Test query\n\nAssistant: ",
             title="Conversation: Test query",
             knowledge_base_id="test-kb-id",
+            record_direct_tool_call=False,
         )

@@ -1,12 +1,14 @@
 """
-Tool for storing data in Bedrock Knowledge Base
+Tool for storing data in Bedrock Knowledge Base asynchronously
 """
 
 import json
 import logging
 import os
+import threading
 import time
 import uuid
+from typing import Any, Dict
 
 import boto3
 from strands import tool
@@ -15,41 +17,38 @@ from strands import tool
 logger = logging.getLogger(__name__)
 
 
-@tool
-def store_in_kb(content: str, title: str = None, knowledge_base_id: str = None) -> dict:
+def _store_in_kb_background(content: str, title: str = None, knowledge_base_id: str = None) -> None:
     """
-    Store content in a Bedrock Knowledge Base using real-time ingestion.
+    Background worker function that performs the actual KB storage.
 
-    Args:
-        content: The text content to store in the knowledge base.
-        title: Optional title for the content. If not provided, a timestamp will be used.
-        knowledge_base_id: Optional knowledge base ID. If not provided, will use the KNOWLEDGE_BASE_ID env variable.
-
-    Returns:
-        A dictionary containing the result of the operation.
+    This runs in a separate thread and handles all the KB operations.
     """
-    # Get knowledge base ID from parameter or environment variable
-    kb_id = knowledge_base_id or os.getenv("KNOWLEDGE_BASE_ID")
-
-    # Validate required inputs
-    if not kb_id:
-        return {
-            "status": "error",
-            "content": [
-                {"text": "❌ No knowledge base ID provided or found in environment variables KNOWLEDGE_BASE_ID"}
-            ],
-        }
-
-    if not content or not content.strip():
-        return {"status": "error", "content": [{"text": "❌ Content cannot be empty"}]}
-
     try:
+        # Get knowledge base ID from parameter or environment variable
+        kb_id = knowledge_base_id or os.getenv("STRANDS_KNOWLEDGE_BASE_ID")
+
+        # Skip if no KB ID is available
+        if not kb_id:
+            logger.debug("No knowledge base ID provided or found in environment variables STRANDS_KNOWLEDGE_BASE_ID")
+            return
+
+        if not content or not content.strip():
+            logger.debug("Content cannot be empty")
+            return
+
         # Generate document ID with timestamp for traceability
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         doc_id = f"memory_{timestamp}_{str(uuid.uuid4())[:8]}"
 
         # Create a document title if not provided
         doc_title = title or f"Strands Memory {timestamp}"
+
+        # Package content with title for better organization
+        content_with_metadata = {
+            "title": doc_title,
+            "action": "store",
+            "content": content,
+        }
 
         region_name = os.getenv("AWS_REGION", "us-west-2")
 
@@ -60,61 +59,117 @@ def store_in_kb(content: str, title: str = None, knowledge_base_id: str = None) 
         data_sources = bedrock_agent_client.list_data_sources(knowledgeBaseId=kb_id)
 
         if not data_sources.get("dataSourceSummaries"):
-            return {
-                "status": "error",
-                "content": [{"text": f"❌ No data sources found for knowledge base {kb_id}, region {region_name}."}],
-            }
+            logger.error(f"No data sources found for knowledge base {kb_id}, region {region_name}.")
+            return
 
-        data_source_id = data_sources["dataSourceSummaries"][0]["dataSourceId"]
+        # Look for a CUSTOM data source type first, as it's required for inline content ingestion
+        data_source_id = None
+        source_type = None
 
-        # Package content with title for better organization
-        content_with_metadata = {
-            "title": doc_title,
-            "action": "store",
-            "content": content,
-        }
+        for ds in data_sources["dataSourceSummaries"]:
+            # Get the data source details to check its type
+            ds_detail = bedrock_agent_client.get_data_source(knowledgeBaseId=kb_id, dataSourceId=ds["dataSourceId"])
 
-        # Prepare document for ingestion
-        ingest_request = {
-            "knowledgeBaseId": kb_id,
-            "dataSourceId": data_source_id,
-            "documents": [
-                {
-                    "content": {
-                        "dataSourceType": "CUSTOM",
-                        "custom": {
-                            "customDocumentIdentifier": {"id": doc_id},
-                            "inlineContent": {
-                                "textContent": {"data": json.dumps(content_with_metadata)},
-                                "type": "TEXT",
+            # Check if this is a CUSTOM type data source
+            if ds_detail["dataSource"]["dataSourceConfiguration"]["type"] == "CUSTOM":
+                data_source_id = ds["dataSourceId"]
+                source_type = "CUSTOM"
+                logger.debug(f"Found CUSTOM data source: {data_source_id}")
+                break
+
+        # If no CUSTOM data source found, use the first available one but log a warning
+        if not data_source_id and data_sources["dataSourceSummaries"]:
+            data_source_id = data_sources["dataSourceSummaries"][0]["dataSourceId"]
+            ds_detail = bedrock_agent_client.get_data_source(knowledgeBaseId=kb_id, dataSourceId=data_source_id)
+            source_type = ds_detail["dataSource"]["dataSourceConfiguration"]["type"]
+            logger.debug(f"No CUSTOM data source found. Using {source_type} data source: {data_source_id}")
+
+        if not data_source_id:
+            logger.error(f"No suitable data source found for knowledge base {kb_id}.")
+            return
+
+        # Prepare document for ingestion based on the data source type
+        if source_type == "CUSTOM":
+            ingest_request = {
+                "knowledgeBaseId": kb_id,
+                "dataSourceId": data_source_id,
+                "documents": [
+                    {
+                        "content": {
+                            "dataSourceType": "CUSTOM",
+                            "custom": {
+                                "customDocumentIdentifier": {"id": doc_id},
+                                "inlineContent": {
+                                    "textContent": {"data": json.dumps(content_with_metadata)},
+                                    "type": "TEXT",
+                                },
+                                "sourceType": "IN_LINE",
                             },
-                            "sourceType": "IN_LINE",
-                        },
+                        }
                     }
-                }
-            ],
-        }
+                ],
+            }
+        elif source_type == "S3":
+            # S3 source types need a different ingestion approach
+            logger.error("S3 data source type is not supported for direct ingestion with this tool.")
+            return
+        else:
+            logger.error(f"Unsupported data source type: {source_type}")
+            return
 
         # Ingest document into knowledge base
         _ = bedrock_agent_client.ingest_knowledge_base_documents(**ingest_request)
 
         # Log success
-        logger.debug(f"Successfully ingested document into knowledge base {kb_id}: {doc_id}")
-
-        # Return in standard Strands format
-        return {
-            "status": "success",
-            "content": [
-                {"text": "✅ Successfully stored content in knowledge base:"},
-                {"text": f"📝 Title: {doc_title}"},
-                {"text": f"🔑 Document ID: {doc_id}"},
-                {"text": f"🗄️ Knowledge Base ID: {kb_id}"},
-            ],
-        }
+        logger.info(f"Successfully ingested document into knowledge base {kb_id}: {doc_id}")
 
     except Exception as e:
         logger.error(f"Error ingesting into knowledge base: {str(e)}")
+
+
+@tool
+def store_in_kb(content: str, title: str = None, knowledge_base_id: str = None) -> Dict[str, Any]:
+    """
+    Store content in a Bedrock Knowledge Base using real-time ingestion.
+
+    This version runs asynchronously in a background thread and returns immediately.
+
+    Args:
+        content: The text content to store in the knowledge base.
+        title: Optional title for the content. If not provided, a timestamp will be used.
+        knowledge_base_id: Optional knowledge base ID. If not provided, will use the STRANDS_KNOWLEDGE_BASE_ID env.
+
+    Returns:
+        A dictionary containing the result of the operation.
+    """
+    # Basic validation before spawning thread
+    if not content or not content.strip():
+        return {"status": "error", "content": [{"text": "❌ Content cannot be empty"}]}
+
+    # Get knowledge base ID from parameter or environment variable
+    kb_id = knowledge_base_id or os.getenv("STRANDS_KNOWLEDGE_BASE_ID")
+    if not kb_id:
         return {
             "status": "error",
-            "content": [{"text": f"❌ Failed to store content in knowledge base: {str(e)}"}],
+            "content": [
+                {"text": "❌ No knowledge base ID provided or found in environment variables STRANDS_KNOWLEDGE_BASE_ID"}
+            ],
         }
+
+    # Create a title if not provided
+    doc_title = title or f"Strands Memory {time.strftime('%Y%m%d_%H%M%S')}"
+
+    # Start background thread for KB operations
+    thread = threading.Thread(target=_store_in_kb_background, args=(content, title, knowledge_base_id), daemon=True)
+    thread.start()
+
+    # Return immediately with status
+    return {
+        "status": "success",
+        "content": [
+            {"text": "✅ Started background task to store content in knowledge base:"},
+            {"text": f"📝 Title: {doc_title}"},
+            {"text": f"🗄️ Knowledge Base ID: {kb_id}"},
+            {"text": "⏱️ Processing in background..."},
+        ],
+    }
