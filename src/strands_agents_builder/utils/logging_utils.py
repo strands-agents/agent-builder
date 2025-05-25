@@ -5,8 +5,7 @@ Utility functions for configuring and managing logging in the Strands CLI.
 
 import logging
 import os
-import sys
-from typing import Optional, List, Union, Dict, Any
+from typing import Any, Dict, List, Optional, Union
 
 
 def configure_logging(
@@ -53,7 +52,7 @@ def configure_logging(
         handlers.append(logging.FileHandler(log_file))
     except Exception as e:
         print(f"Warning: Failed to create log file {log_file}: {str(e)}")
-        print(f"Logging will be disabled")
+        print("Logging will be disabled")
         return
 
     # Configure root logger

@@ -4,8 +4,8 @@ Strands - A minimal CLI interface for Strands
 """
 
 import argparse
-import os
 import logging
+import os
 
 # Strands
 from strands import Agent
@@ -36,8 +36,8 @@ from strands_tools.utils.user_input import get_user_input
 from strands_agents_builder.handlers.callback_handler import callback_handler
 from strands_agents_builder.utils import model_utils
 from strands_agents_builder.utils.kb_utils import load_system_prompt, store_conversation_in_kb
+from strands_agents_builder.utils.logging_utils import configure_logging, get_available_log_levels
 from strands_agents_builder.utils.welcome_utils import render_goodbye_message, render_welcome_message
-from strands_agents_builder.utils.logging_utils import configure_logging, get_available_log_levels, get_logging_status
 
 # Custom tools, handlers, utils
 from tools import (
