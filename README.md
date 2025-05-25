@@ -130,8 +130,8 @@ Strands comes with optimized, maxed-out configuration settings for the Bedrock m
 
 ```json
 {
-    "model_id": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-    "max_tokens": 64000,
+    "model_id": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+    "max_tokens": 32767,
     "boto_client_config": {
         "read_timeout": 900,
         "connect_timeout": 900,
@@ -150,8 +150,8 @@ Strands comes with optimized, maxed-out configuration settings for the Bedrock m
 ```
 
 These settings provide:
-- Claude 3.7 Sonnet (latest high-performance model)
-- Maximum token output (64,000 tokens)
+- Claude Sonnet 4 (latest high-performance model)
+- Maximum token output (32,768 tokens)
 - Extended timeouts (15 minutes) for complex operations
 - Automatic retries with adaptive backoff
 - Enabled thinking capability with 2,048 token budget for recursive reasoning
