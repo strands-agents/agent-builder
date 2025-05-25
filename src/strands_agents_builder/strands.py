@@ -5,6 +5,7 @@ Strands - A minimal CLI interface for Strands
 
 import argparse
 import os
+import logging
 
 # Strands
 from strands import Agent
@@ -36,6 +37,7 @@ from strands_agents_builder.handlers.callback_handler import callback_handler
 from strands_agents_builder.utils import model_utils
 from strands_agents_builder.utils.kb_utils import load_system_prompt, store_conversation_in_kb
 from strands_agents_builder.utils.welcome_utils import render_goodbye_message, render_welcome_message
+from strands_agents_builder.utils.logging_utils import configure_logging, get_available_log_levels, get_logging_status
 
 # Custom tools, handlers, utils
 from tools import (
@@ -69,7 +71,25 @@ def main():
         default="{}",
         help="Model config as JSON string or path",
     )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default="INFO",
+        choices=get_available_log_levels(),
+        help="Set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    )
+    parser.add_argument(
+        "--log-file",
+        type=str,
+        help="Path to log file. If not specified, logging is disabled",
+    )
     args = parser.parse_args()
+
+    # Configure logging
+    configure_logging(log_level=args.log_level, log_file=args.log_file)
+    if args.log_file:
+        logging.info(f"Strands CLI started with log level {args.log_level}")
+        logging.info(f"Log file: {os.path.abspath(args.log_file)}")
 
     # Get knowledge_base_id from args or environment variable
     knowledge_base_id = args.knowledge_base_id or os.getenv("STRANDS_KNOWLEDGE_BASE_ID")
