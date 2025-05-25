@@ -182,7 +182,7 @@ from botocore.config import Config
 
 # Configure Bedrock model with maximum capabilities
 model = BedrockModel(
-    model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    model_id="us.anthropic.claude-sonnet-4-20250514-v1:0",
     max_tokens=int(os.getenv("STRANDS_MAX_TOKENS", "64000")),  # Maximized token output
     boto_client_config=Config(
         read_timeout=900,  # 15 min timeout for long operations
@@ -378,7 +378,7 @@ export STRANDS_SYSTEM_PROMPT="Your custom prompt here"
    - Create agents that can collaborate through shared interfaces
 
 6. **Maximizing Bedrock Performance**
-   - Use Claude 3.7 Sonnet for best reasoning capabilities
+   - Use the latest Claude Sonnet model available for best reasoning capabilities
    - Configure extended timeouts for complex reasoning tasks
    - Enable thinking capability with appropriate token budget
    - Use maximal output tokens to handle complex tool responses

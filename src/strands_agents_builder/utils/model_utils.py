@@ -11,8 +11,8 @@ from strands.types.models import Model
 
 # Default model configuration
 DEFAULT_MODEL_CONFIG = {
-    "model_id": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-    "max_tokens": int(os.getenv("STRANDS_MAX_TOKENS", "64000")),
+    "model_id": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+    "max_tokens": int(os.getenv("STRANDS_MAX_TOKENS", "32768")),
     "boto_client_config": Config(
         read_timeout=900,
         connect_timeout=900,
