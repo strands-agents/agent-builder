@@ -13,8 +13,11 @@ from strands import Agent
 from strands_tools import (
     agent_graph,
     calculator,
+    cron,
+    current_time,
     editor,
     environment,
+    file_read,
     generate_image,
     http_request,
     image_reader,
@@ -42,6 +45,7 @@ from tools import (
     store_in_kb,
     strand,
     welcome,
+    rich_interface,
 )
 
 os.environ["STRANDS_TOOL_CONSOLE_MODE"] = "enabled"
@@ -80,29 +84,32 @@ def main():
     system_prompt = load_system_prompt()
 
     tools = [
-        shell,
-        editor,
-        http_request,
-        python_repl,
-        calculator,
-        retrieve,
-        use_aws,
-        load_tool,
-        environment,
-        use_llm,
-        think,
-        load_tool,
-        journal,
-        image_reader,
-        generate_image,
-        nova_reels,
         agent_graph,
+        calculator,
+        cron,
+        current_time,
+        editor,
+        environment,
+        file_read,
+        generate_image,
+        http_request,
+        image_reader,
+        journal,
+        load_tool,
+        nova_reels,
+        python_repl,
+        retrieve,
+        shell,
         swarm,
+        think,
+        use_aws,
+        use_llm,
         workflow,
         # Strands tools
         store_in_kb,
         strand,
         welcome,
+        rich_interface,
     ]
 
     agent = Agent(
