@@ -70,18 +70,33 @@ strands --kb YOUR_KB_ID "Load my previous calculator tool and enhance it with sc
 
 Strands comes with a comprehensive set of built-in tools:
 
-- **shell**: Run command-line operations with interactive support
-- **editor**: View and edit files with syntax highlighting
-- **http_request**: Make API calls with authentication support
-- **python_repl**: Execute Python code interactively
-- **calculator**: Perform mathematical operations powered by SymPy
-- **retrieve**: Query knowledge bases for relevant information
-- **store_in_kb**: Save content to knowledge bases for future reference
-- **load_tool**: Dynamically load additional tools at runtime
+- **agent_graph**: Create and manage graphs of agents
+- **calculator**: Perform mathematical operations
+- **cron**: Task scheduling with cron jobs
+- **current_time**: Get the current date and time
+- **editor**: File editing operations like line edits, search, and undo
 - **environment**: Manage environment variables
-- **strands**: Create nested agent instances with specialized capabilities
-- **dialog**: Create interactive dialog interfaces
-- **use_aws**: Make AWS API calls through boto3
+- **generate_image**: Create AI generated images with Amazon Bedrock
+- **http_request**: Make API calls, fetch web data, and call local HTTP servers
+- **image_reader**: Process and analyze images
+- **journal**: Create structured tasks and logs for agents to manage and work from
+- **load_tool**: Dynamically load more tools at runtime
+- **memory**: Agent memory persistence in Amazon Bedrock Knowledge Bases
+- **nova_reels**: Create AI generated videos with Nova Reels on Amazon Bedrock
+- **python_repl**: Run Python code
+- **retrieve**: Semantically retrieve data from Amazon Bedrock Knowledge Bases for RAG, memory, and other purposes
+- **shell**: Execute shell commands
+- **slack**: Slack integration with real-time events, API access, and message sending
+- **speak**: Generate speech from text using macOS say command or Amazon Polly
+- **stop**: Force stop the agent event loop
+- **store_in_kb**: Save content to knowledge bases for future reference
+- **strand**: Create nested agent instances with specialized capabilities
+- **swarm**: Coordinate multiple AI agents in a swarm / network of agents
+- **think**: Perform deep thinking by creating parallel branches of agentic reasoning
+- **use_aws**: Interact with AWS services
+- **use_llm**: Run a new AI event loop with custom prompts
+- **welcome**: Manage the Strands Agent Builder welcome text
+- **workflow**: Orchestrate sequenced workflows
 
 ## Knowledge Base Integration
 
@@ -101,26 +116,6 @@ Features:
 - 💾 Persistent storage for your custom tools and agents
 - 🛠️ Ability to iteratively improve tools across sessions
 - 🔍 Find and extend tools built in previous sessions
-
-## Nested Agent Capabilities
-
-Use the `strands` tool to prototype and test specialized sub-agents with their own tools and system prompts:
-
-```python
-# Create a specialized data analysis agent
-agent.tool.strand(
-    query="Build and test a data analysis agent",
-    tool_names=["python_repl", "editor", "http_request"],
-    system_prompt="You're an AI specialized in data analysis. Your task is to build tools for data processing and visualization."
-)
-
-# Create a tool-building agent focused on web automation
-agent.tool.strand(
-    query="Create a set of web automation tools for browser testing",
-    tool_names=["editor", "python_repl", "shell"],
-    system_prompt="You're an expert in creating web automation tools. Your specialty is developing reliable browser testing utilities."
-)
-```
 
 ## Model Configuration
 
