@@ -19,6 +19,9 @@ cat agent-spec.txt | strands "Build a specialized agent based on these specifica
 
 # Use with knowledge base to extend existing tools
 strands --kb YOUR_KB_ID "Load my previous calculator tool and enhance it with scientific functions"
+
+# Connect to MCP servers for extended capabilities
+strands --mcp-config '[{"transport": "stdio", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem"]}]'
 ```
 
 ## Features
@@ -33,6 +36,7 @@ strands --kb YOUR_KB_ID "Load my previous calculator tool and enhance it with sc
 - 🪄 Nested agent capabilities with tool delegation
 - 🔧 Dynamic tool loading for extending functionality
 - 🖥️ Environment variable management and customization
+- 🔌 MCP (Model Context Protocol) client for connecting to external tools and services
 
 ## Integrated Tools
 
@@ -50,6 +54,7 @@ Strands comes with a comprehensive set of built-in tools:
 - **strands**: Create nested agent instances with specialized capabilities
 - **dialog**: Create interactive dialog interfaces
 - **use_aws**: Make AWS API calls through boto3
+- **mcp_client**: Connect to and interact with MCP (Model Context Protocol) servers
 
 ## Knowledge Base Integration
 
@@ -165,6 +170,82 @@ You can then use it with strands by running:
 ```bash
 $ strands --model-provider custom_model --model-config <JSON|FILE>
 ```
+
+## MCP (Model Context Protocol) Integration
+
+Strands now supports connecting to MCP servers, allowing you to extend your agent's capabilities with external tools and services. MCP provides a standardized way to connect AI assistants to various data sources and tools.
+
+### Quick Start with MCP
+
+```bash
+# Connect to a single MCP server
+strands --mcp-config '[{"transport": "stdio", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/files"]}]'
+
+# Load MCP config from a file
+strands --mcp-config mcp_config.json
+
+# Use environment variable for default config
+export STRANDS_MCP_CONFIG_PATH=~/.config/mcp/servers.json
+strands
+```
+
+### MCP Configuration Format
+
+Create an `mcp_config.json` file:
+
+```json
+[
+  {
+    "connection_id": "filesystem",
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/documents"],
+    "auto_load_tools": true
+  },
+  {
+    "connection_id": "github",
+    "transport": "stdio", 
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-github"],
+    "env": {
+      "GITHUB_TOKEN": "your-github-token"
+    }
+  },
+  {
+    "connection_id": "web_api",
+    "transport": "sse",
+    "server_url": "http://localhost:8080/mcp"
+  }
+]
+```
+
+### Supported MCP Transports
+
+- **stdio**: Connect to MCP servers via standard input/output
+- **sse**: Connect to MCP servers via Server-Sent Events (HTTP)
+
+### Using MCP Tools
+
+Once connected, MCP tools are automatically loaded and available to your agent:
+
+```bash
+# List available MCP connections
+strands "Show me all active MCP connections"
+
+# Use MCP filesystem tools
+strands "List all files in my documents folder"
+
+# Use MCP GitHub tools  
+strands "Create a new issue in my repository about improving documentation"
+```
+
+### MCP Connection Management
+
+Strands automatically:
+- Connects to all configured MCP servers on startup
+- Loads available tools from each server (if `auto_load_tools` is true)
+- Disconnects cleanly when exiting
+- Shows connection status during initialization
 
 ## Custom System Prompts
 
