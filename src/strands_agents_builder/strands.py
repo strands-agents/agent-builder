@@ -13,17 +13,25 @@ from strands import Agent
 from strands_tools import (
     agent_graph,
     calculator,
+    cron,
+    current_time,
     editor,
     environment,
+    file_read,
+    file_write,
     generate_image,
     http_request,
     image_reader,
     journal,
     load_tool,
+    memory,
     nova_reels,
     python_repl,
     retrieve,
     shell,
+    slack,
+    speak,
+    stop,
     swarm,
     think,
     use_aws,
@@ -37,7 +45,7 @@ from strands_agents_builder.utils import model_utils
 from strands_agents_builder.utils.kb_utils import load_system_prompt, store_conversation_in_kb
 from strands_agents_builder.utils.welcome_utils import render_goodbye_message, render_welcome_message
 
-# Custom tools, handlers, utils
+# Custom tools
 from tools import (
     store_in_kb,
     strand,
@@ -80,24 +88,31 @@ def main():
     system_prompt = load_system_prompt()
 
     tools = [
-        shell,
-        editor,
-        http_request,
-        python_repl,
-        calculator,
-        retrieve,
-        use_aws,
-        load_tool,
-        environment,
-        use_llm,
-        think,
-        load_tool,
-        journal,
-        image_reader,
-        generate_image,
-        nova_reels,
         agent_graph,
+        calculator,
+        cron,
+        current_time,
+        editor,
+        environment,
+        file_read,
+        file_write,
+        generate_image,
+        http_request,
+        image_reader,
+        journal,
+        load_tool,
+        memory,
+        nova_reels,
+        python_repl,
+        retrieve,
+        shell,
+        slack,
+        speak,
+        stop,
         swarm,
+        think,
+        use_aws,
+        use_llm,
         workflow,
         # Strands tools
         store_in_kb,
@@ -133,7 +148,7 @@ def main():
             render_welcome_message(welcome_text)
         while True:
             try:
-                user_input = get_user_input("\n~ ")
+                user_input = get_user_input("\n~ ", default="", keyboard_interrupt_return_default=False)
                 if user_input.lower() in ["exit", "quit"]:
                     render_goodbye_message()
                     break
@@ -177,6 +192,7 @@ def main():
                 render_goodbye_message()
                 break
             except Exception as e:
+                callback_handler(force_stop=True)  # Stop spinners
                 print(f"\nError: {str(e)}")
 
 
