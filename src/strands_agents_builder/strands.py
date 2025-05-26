@@ -148,7 +148,7 @@ def main():
             render_welcome_message(welcome_text)
         while True:
             try:
-                user_input = get_user_input("\n~ ")
+                user_input = get_user_input("\n~ ", default="", keyboard_interrupt_return_default=False)
                 if user_input.lower() in ["exit", "quit"]:
                     render_goodbye_message()
                     break
@@ -192,6 +192,7 @@ def main():
                 render_goodbye_message()
                 break
             except Exception as e:
+                callback_handler(force_stop=True)  # Stop spinners
                 print(f"\nError: {str(e)}")
 
 
