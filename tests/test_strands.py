@@ -41,6 +41,9 @@ class TestInteractiveMode:
         # Verify welcome message was rendered
         mock_welcome_message.assert_called_once()
 
+        # Verify user input was called with the correct parameters
+        mock_user_input.assert_called_with("\n~ ", default="", keyboard_interrupt_return_default=False)
+
         # Verify user input was processed
         mock_agent.assert_called_with("test query", system_prompt=mock.ANY)
 
@@ -107,7 +110,7 @@ class TestInteractiveMode:
     ):
         """Test handling of empty input"""
         # Setup mocks - empty input followed by exit
-        mock_user_input.side_effect = ["", "exit"]
+        mock_user_input.side_effect = ["", "   ", "\t", "exit"]
 
         # Mock sys.argv
         monkeypatch.setattr(sys, "argv", ["strands"])
@@ -167,7 +170,8 @@ class TestInteractiveMode:
     @mock.patch.object(strands, "get_user_input")
     @mock.patch.object(strands, "Agent")
     @mock.patch.object(strands, "print")
-    def test_general_exception_handling(self, mock_print, mock_agent, mock_input):
+    @mock.patch.object(strands, "callback_handler")
+    def test_general_exception_handling(self, mock_callback_handler, mock_print, mock_agent, mock_input):
         """Test handling of general exceptions in interactive mode"""
         # Setup mocks
         mock_agent_instance = mock.MagicMock()
@@ -186,6 +190,9 @@ class TestInteractiveMode:
 
         # Verify error was printed
         mock_print.assert_any_call("\nError: Test error")
+
+        # Verify callback_handler was called to stop spinners
+        mock_callback_handler.assert_called_once_with(force_stop=True)
 
 
 class TestCommandLine:
