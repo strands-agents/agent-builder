@@ -7,21 +7,21 @@ repos:
         language: system
         pass_filenames: false
         types: [python]
-        stages: ['commit']
+        stages: [pre-commit]
       - id: hatch-lint
         name: Lint code
         entry: hatch fmt --linter
         language: system
         pass_filenames: false
         types: [python]
-        stages: ['commit']
+        stages: [pre-commit]
       - id: hatch-test
         name: Unit tests
         entry: hatch test --cover
         language: system
         pass_filenames: false
         types: [python]
-        stages: ['commit']
+        stages: [pre-commit]
       - id: commitizen-check
         name: Check commit message
         entry: hatch run cz check --commit-msg-file
