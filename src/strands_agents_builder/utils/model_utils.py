@@ -11,7 +11,7 @@ from strands.types.models import Model
 
 # Default model configuration
 DEFAULT_MODEL_CONFIG = {
-    "model_id": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+    "model_id": os.getenv("STRANDS_MODEL_ID", "us.anthropic.claude-sonnet-4-20250514-v1:0"),
     "max_tokens": int(os.getenv("STRANDS_MAX_TOKENS", "32768")),
     "boto_client_config": Config(
         read_timeout=900,
@@ -20,10 +20,12 @@ DEFAULT_MODEL_CONFIG = {
     ),
     "additional_request_fields": {
         "thinking": {
-            "type": "enabled",
+            "type": os.getenv("STRANDS_THINKING_TYPE", "enabled"),
             "budget_tokens": int(os.getenv("STRANDS_BUDGET_TOKENS", "2048")),
         }
     },
+    "cache_tools": os.getenv("STRANDS_CACHE_TOOLS", "default"),
+    "cache_prompt": os.getenv("STRANDS_CACHE_PROMPT", "default"),
 }
 
 
