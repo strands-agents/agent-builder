@@ -177,7 +177,7 @@ strands --model-provider ollama --model-config '{"model_id": <ID>}'
 
 Strands Agent Builder is packaged with `bedrock` and `ollama`.
 
-If you have implemented a custom model provider ([instructions](<LINK>)) and would like to use it with strands, create a python module under the directory "$CWD/.models" and expose an `instance` function that returns an instance of your provider. As an example, assume you have:
+If you have implemented a custom model provider ([instructions](https://strandsagents.com/latest/user-guide/concepts/model-providers/custom_model_provider/)) and would like to use it with strands, create a python module under the directory "$CWD/.models" and expose an `instance` function that returns an instance of your provider. As an example, assume you have:
 
 ```bash
 $ cat ./.models/custom_model.py
