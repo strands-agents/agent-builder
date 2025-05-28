@@ -35,7 +35,6 @@ dependencies = [
 
 [project.scripts]
 strands = "strands_agents_builder.strands:main"
-s = "strands_agents_builder.strands:main"
 
 [tool.hatch.metadata]
 allow-direct-references = true

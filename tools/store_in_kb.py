@@ -17,40 +17,30 @@ from strands import tool
 logger = logging.getLogger(__name__)
 
 
-def _store_in_kb_background(content: str, title: str = None, knowledge_base_id: str = None) -> None:
+def _store_in_kb_background(content: str, title: str, kb_id: str, region_name: str) -> None:
     """
     Background worker function that performs the actual KB storage.
 
     This runs in a separate thread and handles all the KB operations.
+    All validation is done in the main thread before calling this function.
+
+    Args:
+        content: The text content to store
+        title: The title for the content
+        kb_id: The knowledge base ID
+        region_name: The AWS region to use
     """
     try:
-        # Get knowledge base ID from parameter or environment variable
-        kb_id = knowledge_base_id or os.getenv("STRANDS_KNOWLEDGE_BASE_ID")
-
-        # Skip if no KB ID is available
-        if not kb_id:
-            logger.debug("No knowledge base ID provided or found in environment variables STRANDS_KNOWLEDGE_BASE_ID")
-            return
-
-        if not content or not content.strip():
-            logger.debug("Content cannot be empty")
-            return
-
         # Generate document ID with timestamp for traceability
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         doc_id = f"memory_{timestamp}_{str(uuid.uuid4())[:8]}"
 
-        # Create a document title if not provided
-        doc_title = title or f"Strands Memory {timestamp}"
-
         # Package content with title for better organization
         content_with_metadata = {
-            "title": doc_title,
+            "title": title,
             "action": "store",
             "content": content,
         }
-
-        region_name = os.getenv("AWS_REGION", "us-west-2")
 
         # Initialize Bedrock agent client
         bedrock_agent_client = boto3.client("bedrock-agent", region_name=region_name)
@@ -142,11 +132,13 @@ def store_in_kb(content: str, title: str = None, knowledge_base_id: str = None) 
     Returns:
         A dictionary containing the result of the operation.
     """
-    # Basic validation before spawning thread
+    # All validation done in main thread before spawning background thread
+
+    # Validate content first
     if not content or not content.strip():
         return {"status": "error", "content": [{"text": "❌ Content cannot be empty"}]}
 
-    # Get knowledge base ID from parameter or environment variable
+    # Resolve and validate knowledge base ID early (addresses environment variable race condition)
     kb_id = knowledge_base_id or os.getenv("STRANDS_KNOWLEDGE_BASE_ID")
     if not kb_id:
         return {
@@ -156,11 +148,13 @@ def store_in_kb(content: str, title: str = None, knowledge_base_id: str = None) 
             ],
         }
 
-    # Create a title if not provided
+    region_name = os.getenv("AWS_REGION", "us-west-2")
+
     doc_title = title or f"Strands Memory {time.strftime('%Y%m%d_%H%M%S')}"
 
-    # Start background thread for KB operations
-    thread = threading.Thread(target=_store_in_kb_background, args=(content, title, knowledge_base_id), daemon=True)
+    thread = threading.Thread(
+        target=_store_in_kb_background, args=(content, doc_title, kb_id, region_name), daemon=True
+    )
     thread.start()
 
     # Return immediately with status
