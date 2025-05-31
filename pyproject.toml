@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "strands-agents-builder"
-version = "0.1.1"
+version = "0.1.2"
 description = "An example Strands agent demonstrating streaming, tool use, and interactivity from your terminal. This agent builder can help you to build your own agents and tools."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -49,7 +49,7 @@ dev = [
     "commitizen>=4.4.0,<5.0.0",
     "hatch>=1.0.0,<2.0.0",
     "mypy>=1.0.0,<2.0.0",
-    "pre-commit>=2.20.0,<3.0.0",
+    "pre-commit>=3.2.0,<4.2.0",
     "ruff>=0.4.4,<1.0.0",
 ]
 docs = [

@@ -7,284 +7,445 @@ import json
 import os
 from unittest import mock
 
-from tools.store_in_kb import store_in_kb
+import pytest
+
+from tools.store_in_kb import _store_in_kb_background, store_in_kb
+
+
+@pytest.fixture(autouse=True)
+def mock_environment():
+    """Mock environment variables for all tests using proper mocking pattern"""
+    mock_env = {}
+    with mock.patch.object(os, "environ", mock_env):
+        yield mock_env
+
+
+@pytest.fixture
+def mock_boto_client():
+    """Mock boto3.client for tests that need it"""
+    with mock.patch("boto3.client") as mock_client:
+        yield mock_client
+
+
+@pytest.fixture
+def mock_logger():
+    """Mock logger for tests that need it"""
+    with mock.patch("tools.store_in_kb.logger") as mock_log:
+        yield mock_log
+
+
+@pytest.fixture
+def mock_thread():
+    """Mock threading.Thread for tests that need it"""
+    with mock.patch("threading.Thread") as mock_thread_class:
+        yield mock_thread_class
 
 
 class TestStoreInKbTool:
     """Test cases for the store_in_kb tool"""
 
-    def test_missing_kb_id(self):
+    def test_missing_kb_id(self, mock_environment):
         """Test storing without knowledge base ID"""
-        with mock.patch.dict(os.environ, {}), mock.patch("boto3.client") as mock_boto:
-            # Force boto client to raise an exception when no KB ID is provided
-            mock_boto.side_effect = Exception("No knowledge base ID provided")
+        # Environment is already clean from fixture
+        # Call the function with no KB ID parameter
+        result = store_in_kb(content="Test content")
 
-            result = store_in_kb(content="Test content")
+        # The implementation should return an error when KB ID is missing
+        assert result["status"] == "error"
+        assert "No knowledge base ID" in result["content"][0]["text"]
 
-            assert result["status"] == "error"
-            assert "No knowledge base ID provided" in result["content"][0]["text"]
-
-    def test_empty_content(self):
+    def test_empty_content(self, mock_environment):
         """Test storing empty content"""
-        with mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id"}):
-            result = store_in_kb(content="   ")  # Only whitespace
+        # Set a test KB ID in the environment
+        mock_environment["STRANDS_KNOWLEDGE_BASE_ID"] = "test-kb-id"
 
-            assert result["status"] == "error"
-            assert "Content cannot be empty" in result["content"][0]["text"]
+        # Call with empty content
+        result = store_in_kb(content="   ")  # Only whitespace
 
-    def test_successful_storage_env_kb(self):
+        # Should get an error
+        assert result["status"] == "error"
+        assert "Content cannot be empty" in result["content"][0]["text"]
+
+    def test_successful_storage_env_kb(self, mock_environment, mock_thread):
         """Test successful storage using environment variable KB ID"""
-        with mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "env-kb-id"}), mock.patch("boto3.client") as mock_boto:
-            # Mock the list_data_sources response
-            mock_boto.return_value.list_data_sources.return_value = {
-                "dataSourceSummaries": [{"dataSourceId": "test-data-source"}]
-            }
+        # Set the env var
+        mock_environment["STRANDS_KNOWLEDGE_BASE_ID"] = "env-kb-id"
 
-            # Call the function
-            result = store_in_kb(content="Test content")
+        # Call the function
+        result = store_in_kb(content="Test content")
 
-            # Verify boto3 client was created correctly
-            mock_boto.assert_called_once_with("bedrock-agent", region_name=mock.ANY)
+        # Verify the thread was started
+        mock_thread.assert_called_once()
 
-            # Verify list_data_sources was called with correct KB ID
-            mock_boto.return_value.list_data_sources.assert_called_once_with(knowledgeBaseId="env-kb-id")
+        # Verify thread was initialized with daemon=True and the target function
+        kwargs = mock_thread.call_args.kwargs
+        assert kwargs.get("daemon") is True
+        assert callable(kwargs.get("target"))
 
-            # Verify ingest_knowledge_base_documents was called with correct parameters
-            mock_boto.return_value.ingest_knowledge_base_documents.assert_called_once()
-            ingest_args = mock_boto.return_value.ingest_knowledge_base_documents.call_args.kwargs
+        # Verify the response
+        assert result["status"] == "success"
+        assert "Started background task" in result["content"][0]["text"]
+        assert "Knowledge Base ID: env-kb-id" in result["content"][2]["text"]
 
-            assert ingest_args["knowledgeBaseId"] == "env-kb-id"
-            assert ingest_args["dataSourceId"] == "test-data-source"
-            assert len(ingest_args["documents"]) == 1
-
-            # Check content of document
-            doc_content = ingest_args["documents"][0]["content"]["custom"]["inlineContent"]["textContent"]["data"]
-            # Parse JSON content
-            content_obj = json.loads(doc_content)
-            assert content_obj["content"] == "Test content"
-            assert "title" in content_obj
-
-            # Verify success response
-            assert result["status"] == "success"
-            assert "Successfully stored content" in result["content"][0]["text"]
-
-    def test_successful_storage_param_kb(self):
+    def test_successful_storage_param_kb(self, mock_environment, mock_thread):
         """Test successful storage using parameter KB ID"""
-        with mock.patch("boto3.client") as mock_boto:
-            # Mock the list_data_sources response
-            mock_boto.return_value.list_data_sources.return_value = {
-                "dataSourceSummaries": [{"dataSourceId": "test-data-source"}]
-            }
+        # Call the function with explicit KB ID
+        result = store_in_kb(content="Test content", title="Test Title", knowledge_base_id="param-kb-id")
 
-            # Call the function with explicit KB ID
-            _ = store_in_kb(content="Test content", title="Test Title", knowledge_base_id="param-kb-id")
+        # Verify thread was started with the right parameters
+        mock_thread.assert_called_once()
 
-            # Verify list_data_sources was called with correct KB ID
-            mock_boto.return_value.list_data_sources.assert_called_once_with(knowledgeBaseId="param-kb-id")
+        # Check that the response shows the KB ID and title
+        assert result["status"] == "success"
+        assert "Title: Test Title" in result["content"][1]["text"]
+        assert "Knowledge Base ID: param-kb-id" in result["content"][2]["text"]
 
-            # Verify ingest_knowledge_base_documents was called with correct parameters
-            ingest_args = mock_boto.return_value.ingest_knowledge_base_documents.call_args.kwargs
-            assert ingest_args["knowledgeBaseId"] == "param-kb-id"
-
-            # Check content of document
-            doc_content = ingest_args["documents"][0]["content"]["custom"]["inlineContent"]["textContent"]["data"]
-            content_obj = json.loads(doc_content)
-            assert content_obj["title"] == "Test Title"  # Custom title used
-
-    def test_no_data_sources(self):
-        """Test when no data sources are found"""
-        with mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id"}), mock.patch("boto3.client") as mock_boto:
-            # Mock empty data sources response
-            mock_boto.return_value.list_data_sources.return_value = {"dataSourceSummaries": []}
-
-            # Call the function
-            result = store_in_kb(content="Test content")
-
-            # Verify error response
-            assert result["status"] == "error"
-            assert "No data sources found" in result["content"][0]["text"]
-
-    def test_boto3_exception(self):
-        """Test handling of boto3 exceptions"""
-        with mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id"}), mock.patch("boto3.client") as mock_boto:
-            # Make list_data_sources raise an exception
-            mock_boto.return_value.list_data_sources.side_effect = Exception("AWS API Error")
-
-            # Call the function
-            result = store_in_kb(content="Test content")
-
-            # Verify error response
-            assert result["status"] == "error"
-            assert "Failed to store content" in result["content"][0]["text"]
-            assert "AWS API Error" in result["content"][0]["text"]
-
-    def test_custom_region(self):
+    def test_custom_region(self, mock_environment, mock_thread):
         """Test using a custom AWS region"""
-        with (
-            mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id", "AWS_REGION": "us-east-1"}),
-            mock.patch("boto3.client") as mock_boto,
-        ):
-            # Mock successful data sources response
-            mock_boto.return_value.list_data_sources.return_value = {
-                "dataSourceSummaries": [{"dataSourceId": "test-data-source"}]
-            }
+        # Setup environment variables
+        mock_environment["STRANDS_KNOWLEDGE_BASE_ID"] = "test-kb-id"
+        mock_environment["AWS_REGION"] = "us-east-1"
 
-            # Call the function
-            store_in_kb(content="Test content")
+        # Call the function
+        result = store_in_kb(content="Test content")
 
-            # Verify boto3 client was created with correct region
+        # Verify thread was started
+        mock_thread.assert_called_once()
+
+        # We can't directly test the region here, but can verify success response
+        assert result["status"] == "success"
+
+    # NEW TESTS FOR BACKGROUND FUNCTION
+    def test_background_function_direct(self, mock_logger, mock_boto_client):
+        """Test direct execution of the background function with all successful paths"""
+        # Setup mock boto3 client and responses
+        mock_bedrock = mock.MagicMock()
+        mock_boto_client.return_value = mock_bedrock
+
+        # Setup data source response
+        mock_bedrock.list_data_sources.return_value = {"dataSourceSummaries": [{"dataSourceId": "test-ds-id"}]}
+        mock_bedrock.get_data_source.return_value = {"dataSource": {"dataSourceConfiguration": {"type": "CUSTOM"}}}
+        mock_bedrock.ingest_knowledge_base_documents.return_value = {"jobId": "test-job"}
+
+        # Call background function directly with new signature
+        _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-west-2")
+
+        # Verify correct API calls were made
+        mock_bedrock.list_data_sources.assert_called_once_with(knowledgeBaseId="test-kb-id")
+        mock_bedrock.get_data_source.assert_called_once()
+        mock_bedrock.ingest_knowledge_base_documents.assert_called_once()
+
+        # Verify success was logged
+        mock_logger.info.assert_called_once()
+        assert "Successfully ingested" in mock_logger.info.call_args[0][0]
+        assert "test-kb-id" in mock_logger.info.call_args[0][0]
+
+    def test_background_no_data_sources(self, mock_logger, mock_boto_client):
+        """Test background function without any data sources"""
+        # Setup mock
+        mock_bedrock = mock.MagicMock()
+        mock_boto_client.return_value = mock_bedrock
+
+        # Return empty data sources
+        mock_bedrock.list_data_sources.return_value = {"dataSourceSummaries": []}
+
+        # Call background function
+        _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-west-2")
+
+        # Should not call get_data_source or ingest
+        mock_bedrock.get_data_source.assert_not_called()
+        mock_bedrock.ingest_knowledge_base_documents.assert_not_called()
+
+        # Should log error
+        mock_logger.error.assert_called_once()
+        error_message = mock_logger.error.call_args[0][0]
+        assert "No data sources found" in error_message
+
+    def test_background_custom_data_source_selection(self, mock_logger, mock_boto_client):
+        """Test background function with multiple data sources and CUSTOM selection"""
+        # Setup mock boto3 client and responses
+        mock_bedrock = mock.MagicMock()
+        mock_boto_client.return_value = mock_bedrock
+
+        # Setup multiple data sources with different types
+        mock_bedrock.list_data_sources.return_value = {
+            "dataSourceSummaries": [{"dataSourceId": "s3-source-id"}, {"dataSourceId": "custom-source-id"}]
+        }
+
+        # Mock get_data_source to return different types based on dataSourceId
+        def mock_get_data_source(**kwargs):
+            if kwargs["dataSourceId"] == "s3-source-id":
+                return {"dataSource": {"dataSourceConfiguration": {"type": "S3"}}}
+            elif kwargs["dataSourceId"] == "custom-source-id":
+                return {"dataSource": {"dataSourceConfiguration": {"type": "CUSTOM"}}}
+            return {}
+
+        mock_bedrock.get_data_source.side_effect = mock_get_data_source
+
+        # Call background function
+        _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-west-2")
+
+        # Verify CUSTOM type was selected and ingest was called
+        mock_bedrock.ingest_knowledge_base_documents.assert_called_once()
+        request = mock_bedrock.ingest_knowledge_base_documents.call_args[1]
+        assert request["dataSourceId"] == "custom-source-id"
+
+        # Verify success was logged
+        mock_logger.info.assert_called_once()
+
+    @mock.patch("boto3.client")
+    @mock.patch("tools.store_in_kb.logger")
+    def test_background_fallback_to_non_custom_source(self, mock_logger, mock_boto):
+        """Test background function falling back to first data source when no CUSTOM source exists"""
+        # Setup mock
+        mock_bedrock = mock.MagicMock()
+        mock_boto.return_value = mock_bedrock
+
+        # Only provide S3 source
+        mock_bedrock.list_data_sources.return_value = {"dataSourceSummaries": [{"dataSourceId": "s3-source-id"}]}
+        mock_bedrock.get_data_source.return_value = {"dataSource": {"dataSourceConfiguration": {"type": "S3"}}}
+
+        # Call background function
+        _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-west-2")
+
+        # For S3 source, should log error and not call ingest
+        mock_bedrock.ingest_knowledge_base_documents.assert_not_called()
+        mock_logger.error.assert_called()
+        error_message = mock_logger.error.call_args[0][0]
+        assert "S3 data source type is not supported" in error_message
+
+    @mock.patch("boto3.client")
+    @mock.patch("tools.store_in_kb.logger")
+    def test_background_unknown_source_type(self, mock_logger, mock_boto):
+        """Test background function with unknown data source type"""
+        # Setup mock
+        mock_bedrock = mock.MagicMock()
+        mock_boto.return_value = mock_bedrock
+
+        # Provide unknown source type
+        mock_bedrock.list_data_sources.return_value = {"dataSourceSummaries": [{"dataSourceId": "unknown-source-id"}]}
+        mock_bedrock.get_data_source.return_value = {"dataSource": {"dataSourceConfiguration": {"type": "UNKNOWN"}}}
+
+        # Call background function
+        _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-west-2")
+
+        # Should log error about unsupported type and not call ingest
+        mock_bedrock.ingest_knowledge_base_documents.assert_not_called()
+        mock_logger.error.assert_called()
+        error_message = mock_logger.error.call_args[0][0]
+        assert "Unsupported data source type" in error_message
+
+    @mock.patch("boto3.client")
+    @mock.patch("tools.store_in_kb.logger")
+    def test_background_no_datasourcesummaries_key(self, mock_logger, mock_boto):
+        """Test background function with missing dataSourceSummaries key"""
+        # Setup mock
+        mock_bedrock = mock.MagicMock()
+        mock_boto.return_value = mock_bedrock
+
+        # Return response without dataSourceSummaries key
+        mock_bedrock.list_data_sources.return_value = {}
+
+        # Call background function
+        _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-west-2")
+
+        # Should not call get_data_source or ingest
+        mock_bedrock.get_data_source.assert_not_called()
+        mock_bedrock.ingest_knowledge_base_documents.assert_not_called()
+
+        # Should log error
+        mock_logger.error.assert_called_once()
+        error_message = mock_logger.error.call_args[0][0]
+        assert "No data sources found" in error_message
+
+    @mock.patch("boto3.client")
+    @mock.patch("tools.store_in_kb.logger")
+    def test_background_boto3_exception(self, mock_logger, mock_boto):
+        """Test background function exception handling"""
+        # Make boto3.client raise exception
+        mock_boto.side_effect = Exception("AWS service error")
+
+        # Call background function
+        _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-west-2")
+
+        # Should log error
+        mock_logger.error.assert_called_once()
+        error_message = mock_logger.error.call_args[0][0]
+        assert "Error ingesting into knowledge base" in error_message
+        assert "AWS service error" in error_message
+
+    @mock.patch("boto3.client")
+    @mock.patch("tools.store_in_kb.logger")
+    def test_background_list_data_sources_exception(self, mock_logger, mock_boto):
+        """Test background function with exception during list_data_sources call"""
+        # Setup mock boto3 client
+        mock_bedrock = mock.MagicMock()
+        mock_boto.return_value = mock_bedrock
+
+        # Make list_data_sources raise exception
+        mock_bedrock.list_data_sources.side_effect = Exception("List data sources failed")
+
+        # Call background function
+        _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-west-2")
+
+        # Should log error
+        mock_logger.error.assert_called_once()
+        error_message = mock_logger.error.call_args[0][0]
+        assert "Error ingesting into knowledge base" in error_message
+        assert "List data sources failed" in error_message
+
+    @mock.patch("boto3.client")
+    @mock.patch("tools.store_in_kb.logger")
+    def test_background_auto_title(self, mock_logger, mock_boto):
+        """Test background function with auto-generated title"""
+        # Setup mocks for successful path
+        mock_bedrock = mock.MagicMock()
+        mock_boto.return_value = mock_bedrock
+        mock_bedrock.list_data_sources.return_value = {"dataSourceSummaries": [{"dataSourceId": "test-ds-id"}]}
+        mock_bedrock.get_data_source.return_value = {"dataSource": {"dataSourceConfiguration": {"type": "CUSTOM"}}}
+
+        # Call background function with auto-generated title (simulating what main function does)
+        _store_in_kb_background("Test content", "Strands Memory 20241225_120000", "test-kb-id", "us-west-2")
+
+        # Verify ingest was called with correct parameters
+        mock_bedrock.ingest_knowledge_base_documents.assert_called_once()
+        request = mock_bedrock.ingest_knowledge_base_documents.call_args[1]
+
+        # Check the JSON data in the request includes an auto-generated title
+        text_content = request["documents"][0]["content"]["custom"]["inlineContent"]["textContent"]["data"]
+        data = json.loads(text_content)
+        assert "title" in data
+        assert "Strands Memory" in data["title"]
+
+    @mock.patch("boto3.client")
+    @mock.patch("tools.store_in_kb.logger")
+    def test_background_custom_title(self, mock_logger, mock_boto):
+        """Test background function with custom title"""
+        # Setup mocks for successful path
+        mock_bedrock = mock.MagicMock()
+        mock_boto.return_value = mock_bedrock
+        mock_bedrock.list_data_sources.return_value = {"dataSourceSummaries": [{"dataSourceId": "test-ds-id"}]}
+        mock_bedrock.get_data_source.return_value = {"dataSource": {"dataSourceConfiguration": {"type": "CUSTOM"}}}
+
+        # Call background function with custom title
+        _store_in_kb_background("Test content", "My Custom Title", "test-kb-id", "us-west-2")
+
+        # Verify ingest was called with correct parameters
+        mock_bedrock.ingest_knowledge_base_documents.assert_called_once()
+        request = mock_bedrock.ingest_knowledge_base_documents.call_args[1]
+
+        # Check the JSON data in the request includes the provided title
+        text_content = request["documents"][0]["content"]["custom"]["inlineContent"]["textContent"]["data"]
+        data = json.loads(text_content)
+        assert data["title"] == "My Custom Title"
+
+    @mock.patch("boto3.client")
+    @mock.patch("tools.store_in_kb.logger")
+    def test_background_env_region(self, mock_logger, mock_boto):
+        """Test background function with region from environment"""
+        # Set environment region
+        with mock.patch.dict(os.environ, {"AWS_REGION": "us-east-1"}):
+            # Setup successful mocks
+            mock_bedrock = mock.MagicMock()
+            mock_boto.return_value = mock_bedrock
+            mock_bedrock.list_data_sources.return_value = {"dataSourceSummaries": [{"dataSourceId": "test-ds-id"}]}
+            mock_bedrock.get_data_source.return_value = {"dataSource": {"dataSourceConfiguration": {"type": "CUSTOM"}}}
+
+            # Call background function
+            _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-east-1")
+
+            # Verify boto3 client was created with the right region
             mock_boto.assert_called_once_with("bedrock-agent", region_name="us-east-1")
 
+    @mock.patch("boto3.client")
+    @mock.patch("tools.store_in_kb.logger")
+    def test_background_default_region(self, mock_logger, mock_boto):
+        """Test background function with default region when env not set"""
+        # Remove environment region if present
+        with mock.patch.dict(os.environ, {}, clear=True):
+            # Setup successful mocks
+            mock_bedrock = mock.MagicMock()
+            mock_boto.return_value = mock_bedrock
+            mock_bedrock.list_data_sources.return_value = {"dataSourceSummaries": [{"dataSourceId": "test-ds-id"}]}
+            mock_bedrock.get_data_source.return_value = {"dataSource": {"dataSourceConfiguration": {"type": "CUSTOM"}}}
 
-def test_store_in_kb_custom_region():
+            # Call background function
+            _store_in_kb_background("Test content", "Test Title", "test-kb-id", "us-west-2")
+
+            # Verify boto3 client was created with default region
+            mock_boto.assert_called_once_with("bedrock-agent", region_name="us-west-2")
+
+
+def test_store_in_kb_custom_region(mock_environment, mock_thread):
     """Test store_in_kb with custom AWS region from environment variable"""
+    # Set environment variables
+    mock_environment["STRANDS_KNOWLEDGE_BASE_ID"] = "test-kb"
+    mock_environment["AWS_REGION"] = "ap-southeast-2"
 
-    # Mock responses
-    mock_list_response = {"dataSourceSummaries": [{"dataSourceId": "test-data-source"}]}
-    mock_ingest_response = {"status": "success"}
+    # Call function
+    result = store_in_kb(content="Test content", title="Test title")
 
-    # Set up mocks
-    mock_client = mock.MagicMock()
-    mock_client.list_data_sources.return_value = mock_list_response
-    mock_client.ingest_knowledge_base_documents.return_value = mock_ingest_response
+    # Verify thread was started
+    mock_thread.assert_called_once()
 
-    with (
-        mock.patch.dict(os.environ, {"AWS_REGION": "ap-southeast-2"}),
-        mock.patch("boto3.client", return_value=mock_client) as mock_boto3,
-    ):
-        result = store_in_kb(content="Test content", title="Test title", knowledge_base_id="test-kb")
-
-        # Verify boto3 client was created with the right region
-        mock_boto3.assert_called_once_with("bedrock-agent", region_name="ap-southeast-2")
-
-        # Verify success response
-        assert result["status"] == "success"
+    # Verify success response
+    assert result["status"] == "success"
+    # Verify title appears in response
+    assert "Title: Test title" in result["content"][1]["text"]
 
 
-def test_store_in_kb_exception_path():
+def test_store_in_kb_exception_path(mock_environment, mock_thread):
     """Test exception handling in store_in_kb"""
+    # Set required environment
+    mock_environment["STRANDS_KNOWLEDGE_BASE_ID"] = "test-kb"
 
-    # Mock client to raise exception
-    mock_client = mock.MagicMock()
-    mock_client.list_data_sources.side_effect = Exception("Test boto3 error")
+    # Our implementation starts a thread regardless of potential errors
+    result = store_in_kb(content="Test content", title="Test title", knowledge_base_id="test-kb")
 
-    with mock.patch("boto3.client", return_value=mock_client):
-        result = store_in_kb(content="Test content", title="Test title", knowledge_base_id="test-kb")
+    # Verify thread was started
+    mock_thread.assert_called_once()
 
-        # Verify error response
-        assert result["status"] == "error"
-        assert "Test boto3 error" in result["content"][0]["text"]
-
-
-def test_no_data_sources_empty_dict():
-    """Test when data sources response is empty dict (no dataSourceSummaries key)"""
-    with mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id"}), mock.patch("boto3.client") as mock_boto:
-        # Mock empty response (no dataSourceSummaries key)
-        mock_boto.return_value.list_data_sources.return_value = {}
-
-        # Call the function
-        result = store_in_kb(content="Test content")
-
-        # Verify error response
-        assert result["status"] == "error"
-        assert "No data sources found" in result["content"][0]["text"]
+    # Verify success response (main function succeeds even if background will fail)
+    assert result["status"] == "success"
 
 
-def test_data_source_id_selection():
-    """Test that the first data source ID is selected when multiple are available"""
-    with mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id"}), mock.patch("boto3.client") as mock_boto:
-        # Mock multiple data sources
-        mock_boto.return_value.list_data_sources.return_value = {
-            "dataSourceSummaries": [{"dataSourceId": "data-source-1"}, {"dataSourceId": "data-source-2"}]
-        }
+def test_data_source_id_selection(mock_environment, mock_thread):
+    """Test thread creation with the target function and proper args"""
+    mock_environment["STRANDS_KNOWLEDGE_BASE_ID"] = "test-kb-id"
 
-        # Call the function
-        result = store_in_kb(content="Test content")
+    # Call the function
+    result = store_in_kb(content="Test content")
 
-        # Verify the first data source was used
-        ingest_args = mock_boto.return_value.ingest_knowledge_base_documents.call_args.kwargs
-        assert ingest_args["dataSourceId"] == "data-source-1"
-        assert result["status"] == "success"
+    # Verify thread was initialized correctly
+    mock_thread.assert_called_once()
 
+    # Verify that args are passed to target function
+    assert "args" in mock_thread.call_args.kwargs
+    args = mock_thread.call_args.kwargs["args"]
+    assert len(args) == 4  # content, title, kb_id, region_name
+    assert args[0] == "Test content"  # First arg is content
 
-def test_logging_functionality():
-    """Test that logging functionality works properly"""
-    with (
-        mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id"}),
-        mock.patch("boto3.client") as mock_boto,
-        mock.patch("tools.store_in_kb.logger") as mock_logger,
-    ):
-        # Mock successful data sources response
-        mock_boto.return_value.list_data_sources.return_value = {
-            "dataSourceSummaries": [{"dataSourceId": "test-data-source"}]
-        }
+    # Verify thread was started
+    mock_thread.return_value.start.assert_called_once()
 
-        # Call the function
-        store_in_kb(content="Test content")
-
-        # Verify logger was called
-        mock_logger.debug.assert_called_once()
-        # The log message should contain "Successfully ingested document"
-        assert "Successfully ingested document" in mock_logger.debug.call_args.args[0]
+    # Verify success response
+    assert result["status"] == "success"
 
 
-def test_exception_logging():
-    """Test that exceptions are properly logged"""
-    with (
-        mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id"}),
-        mock.patch("boto3.client") as mock_boto,
-        mock.patch("tools.store_in_kb.logger") as mock_logger,
-    ):
-        # Make the API call raise an exception
-        mock_boto.return_value.list_data_sources.side_effect = Exception("API error")
+def test_auto_generated_title(mock_environment, mock_thread):
+    """Test that title is auto-generated when not provided"""
+    mock_environment["STRANDS_KNOWLEDGE_BASE_ID"] = "test-kb-id"
 
-        # Call the function
-        store_in_kb(content="Test content")
+    # Call the function without a title
+    result = store_in_kb(content="Test content")
 
-        # Verify error was logged
-        mock_logger.error.assert_called_once()
-        # The log message should contain "Error ingesting"
-        assert "Error ingesting" in mock_logger.error.call_args.args[0]
+    # Verify thread creation
+    mock_thread.assert_called_once()
+    args = mock_thread.call_args.kwargs["args"]
+    assert len(args) >= 2
+    assert args[0] == "Test content"  # First arg is content
+    # Second arg (title) should be auto-generated, not None
+    assert "Strands Memory" in args[1]  # Second arg should contain auto-generated title
 
-
-def test_content_metadata_format():
-    """Test that the content metadata is properly formatted"""
-    with mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id"}), mock.patch("boto3.client") as mock_boto:
-        # Mock successful data sources response
-        mock_boto.return_value.list_data_sources.return_value = {
-            "dataSourceSummaries": [{"dataSourceId": "test-data-source"}]
-        }
-
-        # Call the function with specific title
-        custom_title = "My Custom Title"
-        store_in_kb(content="Test content", title=custom_title)
-
-        # Get the ingest request document content
-        ingest_args = mock_boto.return_value.ingest_knowledge_base_documents.call_args.kwargs
-        doc_content_json = ingest_args["documents"][0]["content"]["custom"]["inlineContent"]["textContent"]["data"]
-        doc_content = json.loads(doc_content_json)
-
-        # Verify metadata format
-        assert doc_content["title"] == custom_title
-        assert doc_content["action"] == "store"
-        assert doc_content["content"] == "Test content"
-
-
-def test_auto_generated_title():
-    """Test that a title is auto-generated when not provided"""
-    with mock.patch.dict(os.environ, {"KNOWLEDGE_BASE_ID": "test-kb-id"}), mock.patch("boto3.client") as mock_boto:
-        # Mock successful data sources response
-        mock_boto.return_value.list_data_sources.return_value = {
-            "dataSourceSummaries": [{"dataSourceId": "test-data-source"}]
-        }
-
-        # Call the function without a title
-        store_in_kb(content="Test content")
-
-        # Get the ingest request document content
-        ingest_args = mock_boto.return_value.ingest_knowledge_base_documents.call_args.kwargs
-        doc_content_json = ingest_args["documents"][0]["content"]["custom"]["inlineContent"]["textContent"]["data"]
-        doc_content = json.loads(doc_content_json)
-
-        # Verify a title was generated (should start with "Strands Memory")
-        assert doc_content["title"].startswith("Strands Memory")
+    # Title format in response should include "Strands Memory"
+    assert "Title: Strands Memory" in result["content"][1]["text"]

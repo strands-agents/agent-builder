@@ -1,4 +1,36 @@
-# Strands Agent Builder
+<div align="center">
+  <div>
+    <a href="https://strandsagents.com">
+      <img src="https://strandsagents.com/latest/assets/logo-auto.svg" alt="Strands Agents" width="55px" height="105px">
+    </a>
+  </div>
+
+  <h1>
+    Strands Agent Builder
+  </h1>
+
+  <h2>
+    A model-driven approach to building AI agents in just a few lines of code.
+  </h2>
+
+  <div align="center">
+    <a href="https://github.com/strands-agents/agent-builder/graphs/commit-activity"><img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/strands-agents/agent-builder"/></a>
+    <a href="https://github.com/strands-agents/agent-builder/issues"><img alt="GitHub open issues" src="https://img.shields.io/github/issues/strands-agents/agent-builder"/></a>
+    <a href="https://github.com/strands-agents/agent-builder/pulls"><img alt="GitHub open pull requests" src="https://img.shields.io/github/issues-pr/strands-agents/agent-builder"/></a>
+    <a href="https://github.com/strands-agents/agent-builder/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/strands-agents/agent-builder"/></a>
+    <a href="https://pypi.org/project/strands-agents-builder/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/strands-agents-builder"/></a>
+    <a href="https://python.org"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/strands-agents-builder"/></a>
+  </div>
+  
+  <p>
+    <a href="https://strandsagents.com/">Documentation</a>
+    ◆ <a href="https://github.com/strands-agents/samples">Samples</a>
+    ◆ <a href="https://github.com/strands-agents/sdk-python">Python SDK</a>
+    ◆ <a href="https://github.com/strands-agents/tools">Tools</a>
+    ◆ <a href="https://github.com/strands-agents/agent-builder">Agent Builder</a>
+    ◆ <a href="https://github.com/strands-agents/mcp-server">MCP Server</a>
+  </p>
+</div>
 
 An interactive Strands agent toolkit designed to help you build, test, and extend your own custom AI agents and tools. With the Strands Agent Builder, you can create specialized agents, develop custom tools, and compose complex AI workflows—all from your terminal.
 
@@ -38,18 +70,33 @@ strands --kb YOUR_KB_ID "Load my previous calculator tool and enhance it with sc
 
 Strands comes with a comprehensive set of built-in tools:
 
-- **shell**: Run command-line operations with interactive support
-- **editor**: View and edit files with syntax highlighting
-- **http_request**: Make API calls with authentication support
-- **python_repl**: Execute Python code interactively
-- **calculator**: Perform mathematical operations powered by SymPy
-- **retrieve**: Query knowledge bases for relevant information
-- **store_in_kb**: Save content to knowledge bases for future reference
-- **load_tool**: Dynamically load additional tools at runtime
+- **agent_graph**: Create and manage graphs of agents
+- **calculator**: Perform mathematical operations
+- **cron**: Task scheduling with cron jobs
+- **current_time**: Get the current date and time
+- **editor**: File editing operations like line edits, search, and undo
 - **environment**: Manage environment variables
-- **strands**: Create nested agent instances with specialized capabilities
-- **dialog**: Create interactive dialog interfaces
-- **use_aws**: Make AWS API calls through boto3
+- **generate_image**: Create AI generated images with Amazon Bedrock
+- **http_request**: Make API calls, fetch web data, and call local HTTP servers
+- **image_reader**: Process and analyze images
+- **journal**: Create structured tasks and logs for agents to manage and work from
+- **load_tool**: Dynamically load more tools at runtime
+- **memory**: Agent memory persistence in Amazon Bedrock Knowledge Bases
+- **nova_reels**: Create AI generated videos with Nova Reels on Amazon Bedrock
+- **python_repl**: Run Python code
+- **retrieve**: Semantically retrieve data from Amazon Bedrock Knowledge Bases for RAG, memory, and other purposes
+- **shell**: Execute shell commands
+- **slack**: Slack integration with real-time events, API access, and message sending
+- **speak**: Generate speech from text using macOS say command or Amazon Polly
+- **stop**: Force stop the agent event loop
+- **store_in_kb**: Save content to knowledge bases for future reference
+- **strand**: Create nested agent instances with specialized capabilities
+- **swarm**: Coordinate multiple AI agents in a swarm / network of agents
+- **think**: Perform deep thinking by creating parallel branches of agentic reasoning
+- **use_aws**: Interact with AWS services
+- **use_llm**: Run a new AI event loop with custom prompts
+- **welcome**: Manage the Strands Agent Builder welcome text
+- **workflow**: Orchestrate sequenced workflows
 
 ## Knowledge Base Integration
 
@@ -70,26 +117,6 @@ Features:
 - 🛠️ Ability to iteratively improve tools across sessions
 - 🔍 Find and extend tools built in previous sessions
 
-## Nested Agent Capabilities
-
-Use the `strands` tool to prototype and test specialized sub-agents with their own tools and system prompts:
-
-```python
-# Create a specialized data analysis agent
-agent.tool.strand(
-    query="Build and test a data analysis agent",
-    tool_names=["python_repl", "editor", "http_request"],
-    system_prompt="You're an AI specialized in data analysis. Your task is to build tools for data processing and visualization."
-)
-
-# Create a tool-building agent focused on web automation
-agent.tool.strand(
-    query="Create a set of web automation tools for browser testing",
-    tool_names=["editor", "python_repl", "shell"],
-    system_prompt="You're an expert in creating web automation tools. Your specialty is developing reliable browser testing utilities."
-)
-```
-
 ## Model Configuration
 
 ### Optimized Defaults
@@ -98,8 +125,8 @@ Strands comes with optimized, maxed-out configuration settings for the Bedrock m
 
 ```json
 {
-    "model_id": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-    "max_tokens": 64000,
+    "model_id": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+    "max_tokens": 32767,
     "boto_client_config": {
         "read_timeout": 900,
         "connect_timeout": 900,
@@ -118,8 +145,8 @@ Strands comes with optimized, maxed-out configuration settings for the Bedrock m
 ```
 
 These settings provide:
-- Claude 3.7 Sonnet (latest high-performance model)
-- Maximum token output (64,000 tokens)
+- Claude Sonnet 4 (latest high-performance model)
+- Maximum token output (32,768 tokens)
 - Extended timeouts (15 minutes) for complex operations
 - Automatic retries with adaptive backoff
 - Enabled thinking capability with 2,048 token budget for recursive reasoning
@@ -150,7 +177,7 @@ strands --model-provider ollama --model-config '{"model_id": <ID>}'
 
 Strands Agent Builder is packaged with `bedrock` and `ollama`.
 
-If you have implemented a custom model provider ([instructions](<LINK>)) and would like to use it with strands, create a python module under the directory "$CWD/.models" and expose an `instance` function that returns an instance of your provider. As an example, assume you have:
+If you have implemented a custom model provider ([instructions](https://strandsagents.com/latest/user-guide/concepts/model-providers/custom_model_provider/)) and would like to use it with strands, create a python module under the directory "$CWD/.models" and expose an `instance` function that returns an instance of your provider. As an example, assume you have:
 
 ```bash
 $ cat ./.models/custom_model.py
@@ -176,22 +203,29 @@ export STRANDS_SYSTEM_PROMPT="You are a Python expert."
 echo "You are a security expert." > .prompt
 ```
 
-## Contributing
-
-```bash
-git clone https://github.com/strands-agents/agent-builder.git ~/.agent-builder
-cd ~/.agent-builder
-python3 -m venv venv && source venv/bin/activate
-pip3 install -e .
-pip3 install -e ".[test]"
-
-# Run tests
-hatch run test         # Run all tests with verbose coverage output
-hatch run test -k test_pattern  # Run specific tests matching a pattern
-```
-
-Testing is managed through hatch scripting in pyproject.toml.
-
 ## Exit
 
 Type `exit`, `quit`, or press `Ctrl+C`/`Ctrl+D`
+
+## Contributing ❤️
+
+We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details on:
+- Reporting bugs & features
+- Development setup
+- Contributing via Pull Requests
+- Code of Conduct
+- Reporting of security issues
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## Security
+
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+
+## ⚠️ Preview Status
+
+Strands Agents is currently in public preview. During this period:
+- APIs may change as we refine the SDK
+- We welcome feedback and contributions
