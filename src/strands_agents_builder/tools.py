@@ -85,7 +85,7 @@ def get_tools() -> dict[str, Any]:
             shell,
         )
 
-        tools += {
+        tools |= {
             "python_repl": python_repl,
             "shell": shell,
         }
