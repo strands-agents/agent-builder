@@ -14,7 +14,7 @@ def test_tools_includes_more_tools_on_non_windows():
 
 
 @pytest.mark.skipif(platform.system() != "Windows", reason="Windows-specific test")
-def test_tools_includes_more_tools_on_non_windows():
+def test_tools_includes_more_tools_on_windows():
     tools = get_tools()
 
     assert "python_repl" not in tools
