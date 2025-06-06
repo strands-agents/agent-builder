@@ -136,6 +136,7 @@ Strands comes with optimized, maxed-out configuration settings for the Bedrock m
         }
     },
     "additional_request_fields": {
+        "anthropic_beta": ["interleaved-thinking-2025-05-14"],
         "thinking": {
             "type": "enabled",
             "budget_tokens": 2048
@@ -149,6 +150,7 @@ These settings provide:
 - Maximum token output (32,768 tokens)
 - Extended timeouts (15 minutes) for complex operations
 - Automatic retries with adaptive backoff
+- Interleaved thinking capability for real-time reasoning during responses
 - Enabled thinking capability with 2,048 token budget for recursive reasoning
 
 You can customize these values using environment variables:
