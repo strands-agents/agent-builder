@@ -8,49 +8,13 @@ import os
 
 # Strands
 from strands import Agent
-
-# Strands tools
-from strands_tools import (
-    agent_graph,
-    calculator,
-    cron,
-    current_time,
-    editor,
-    environment,
-    file_read,
-    file_write,
-    generate_image,
-    http_request,
-    image_reader,
-    journal,
-    load_tool,
-    memory,
-    nova_reels,
-    python_repl,
-    retrieve,
-    shell,
-    slack,
-    speak,
-    stop,
-    swarm,
-    think,
-    use_aws,
-    use_llm,
-    workflow,
-)
 from strands_tools.utils.user_input import get_user_input
 
 from strands_agents_builder.handlers.callback_handler import callback_handler
+from strands_agents_builder.tools import get_tools
 from strands_agents_builder.utils import model_utils
 from strands_agents_builder.utils.kb_utils import load_system_prompt, store_conversation_in_kb
 from strands_agents_builder.utils.welcome_utils import render_goodbye_message, render_welcome_message
-
-# Custom tools
-from tools import (
-    store_in_kb,
-    strand,
-    welcome,
-)
 
 os.environ["STRANDS_TOOL_CONSOLE_MODE"] = "enabled"
 
@@ -87,38 +51,7 @@ def main():
     # Load system prompt
     system_prompt = load_system_prompt()
 
-    tools = [
-        agent_graph,
-        calculator,
-        cron,
-        current_time,
-        editor,
-        environment,
-        file_read,
-        file_write,
-        generate_image,
-        http_request,
-        image_reader,
-        journal,
-        load_tool,
-        memory,
-        nova_reels,
-        python_repl,
-        retrieve,
-        shell,
-        slack,
-        speak,
-        stop,
-        swarm,
-        think,
-        use_aws,
-        use_llm,
-        workflow,
-        # Strands tools
-        store_in_kb,
-        strand,
-        welcome,
-    ]
+    tools = get_tools().values()
 
     agent = Agent(
         model=model,
