@@ -24,6 +24,7 @@ from strands_tools import (
     image_reader,
     journal,
     load_tool,
+    mcp_client,
     memory,
     nova_reels,
     python_repl,
@@ -41,7 +42,7 @@ from strands_tools import (
 from strands_tools.utils.user_input import get_user_input
 
 from strands_agents_builder.handlers.callback_handler import callback_handler
-from strands_agents_builder.utils import model_utils
+from strands_agents_builder.utils import mcp_utils, model_utils
 from strands_agents_builder.utils.kb_utils import load_system_prompt, store_conversation_in_kb
 from strands_agents_builder.utils.welcome_utils import render_goodbye_message, render_welcome_message
 
@@ -76,6 +77,12 @@ def main():
         type=model_utils.load_config,
         default="{}",
         help="Model config as JSON string or path",
+    )
+    parser.add_argument(
+        "--mcp-config",
+        type=mcp_utils.load_config,
+        default="[]",
+        help="MCP config as JSON string or path to JSON file. Can specify multiple MCP servers.",
     )
     args = parser.parse_args()
 
@@ -118,6 +125,7 @@ def main():
         store_in_kb,
         strand,
         welcome,
+        mcp_client,
     ]
 
     agent = Agent(
@@ -126,6 +134,21 @@ def main():
         system_prompt=system_prompt,
         callback_handler=callback_handler,
     )
+
+    # Initialize MCP connections if configured
+    if args.mcp_config:
+        print("\n🔌 Initializing MCP connections...")
+        mcp_results = mcp_utils.initialize_mcp_connections(args.mcp_config, agent)
+
+        # Summary of MCP initialization
+        successful = sum(1 for success in mcp_results.values() if success)
+        total = len(mcp_results)
+        if successful == total:
+            print(f"✅ All {total} MCP connection(s) initialized successfully\n")
+        elif successful > 0:
+            print(f"⚠️  {successful}/{total} MCP connection(s) initialized\n")
+        else:
+            print("❌ Failed to initialize any MCP connections\n")
 
     # Process query or enter interactive mode
     if args.query:
@@ -150,6 +173,10 @@ def main():
             try:
                 user_input = get_user_input("\n~ ", default="", keyboard_interrupt_return_default=False)
                 if user_input.lower() in ["exit", "quit"]:
+                    # Disconnect all MCP connections before exiting
+                    if args.mcp_config:
+                        print("\n🔌 Disconnecting MCP connections...")
+                        mcp_utils.disconnect_all(agent)
                     render_goodbye_message()
                     break
                 if user_input.startswith("!"):
@@ -189,6 +216,10 @@ def main():
                         # Store conversation in knowledge base
                         store_conversation_in_kb(agent, user_input, response, knowledge_base_id)
             except (KeyboardInterrupt, EOFError):
+                # Disconnect all MCP connections before exiting
+                if args.mcp_config:
+                    print("\n\n🔌 Disconnecting MCP connections...")
+                    mcp_utils.disconnect_all(agent)
                 render_goodbye_message()
                 break
             except Exception as e:
