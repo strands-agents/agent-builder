@@ -9,15 +9,49 @@ on:
 
 jobs:
   unit-test:
-    name: Unit Tests
+    name: Unit Tests - Python ${{ matrix.python-version }} - ${{ matrix.os-name }}
     permissions:
       contents: read
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
-      fail-fast: false
-
+       include:
+        # Linux
+        - os: ubuntu-latest
+          os-name: 'linux'
+          python-version: "3.10"
+        - os: ubuntu-latest
+          os-name: 'linux'
+          python-version: "3.11"
+        - os: ubuntu-latest
+          os-name: 'linux'
+          python-version: "3.12"
+        - os: ubuntu-latest
+          os-name: 'linux'
+          python-version: "3.13"
+        # Windows
+        - os: windows-latest
+          os-name: 'windows'
+          python-version: "3.10"
+        - os: windows-latest
+          os-name: 'windows'
+          python-version: "3.11"
+        - os: windows-latest
+          os-name: 'windows'
+          python-version: "3.12"
+        - os: windows-latest
+          os-name: 'windows'
+          python-version: "3.13"
+        # MacOS - earliest & latest only; not enough runners for macOS
+        - os: macos-latest
+          os-name: 'macOS'
+          python-version: "3.10"
+        - os: macos-latest
+          os-name: 'macOS'
+          python-version: "3.13"
+      fail-fast: true
+    runs-on: ${{ matrix.os }}
+    env:
+      LOG_LEVEL: DEBUG
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

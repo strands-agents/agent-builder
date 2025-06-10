@@ -46,16 +46,9 @@ def strand(
         sys.stdout = captured_output
 
         try:
-            # Resolve tools based on provided tool names
-            # For simplicity, we'll import a common set, but we could make this more dynamic
-            from strands_tools import editor, load_tool, python_repl, shell
+            from strands_agents_builder.tools import get_tools
 
-            all_tools = {
-                "shell": shell,
-                "editor": editor,
-                "python_repl": python_repl,
-                "load_tool": load_tool,
-            }
+            all_tools = get_tools()
 
             # Select requested tools or use all if none specified
             selected_tools = [all_tools[name] for name in tool_names if name in all_tools]
