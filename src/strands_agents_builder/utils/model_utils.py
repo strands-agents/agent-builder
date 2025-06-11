@@ -19,10 +19,11 @@ DEFAULT_MODEL_CONFIG = {
         retries=dict(max_attempts=3, mode="adaptive"),
     ),
     "additional_request_fields": {
+        "anthropic_beta": ["interleaved-thinking-2025-05-14"],
         "thinking": {
             "type": os.getenv("STRANDS_THINKING_TYPE", "enabled"),
             "budget_tokens": int(os.getenv("STRANDS_BUDGET_TOKENS", "2048")),
-        }
+        },
     },
     "cache_tools": os.getenv("STRANDS_CACHE_TOOLS", "default"),
     "cache_prompt": os.getenv("STRANDS_CACHE_PROMPT", "default"),

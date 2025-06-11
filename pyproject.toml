@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "strands-agents-builder"
-version = "0.1.2"
+dynamic = ["version"]
 description = "An example Strands agent demonstrating streaming, tool use, and interactivity from your terminal. This agent builder can help you to build your own agents and tools."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -182,6 +182,10 @@ directory = "build/coverage/html"
 
 [tool.coverage.xml]
 output = "build/coverage/coverage.xml"
+
+[tool.hatch.version]
+# Tells Hatch to use your version control system (git) to determine the version.
+source = "vcs"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
