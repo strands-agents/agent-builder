@@ -44,7 +44,7 @@ from strands_tools.utils.user_input import get_user_input
 from strands_agents_builder.handlers.callback_handler import callback_handler
 from strands_agents_builder.utils import model_utils
 from strands_agents_builder.utils.kb_utils import load_system_prompt, store_conversation_in_kb
-from strands_agents_builder.utils.logging_utils import configure_logging, get_available_log_levels
+from strands_agents_builder.utils.logging_utils import configure_logging
 from strands_agents_builder.utils.welcome_utils import render_goodbye_message, render_welcome_message
 
 # Custom tools
@@ -83,7 +83,7 @@ def main():
         "--log-level",
         type=str,
         default=None,
-        choices=get_available_log_levels(),
+        choices=list(logging.getLevelNamesMapping().keys()),
         help="Set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
     parser.add_argument(

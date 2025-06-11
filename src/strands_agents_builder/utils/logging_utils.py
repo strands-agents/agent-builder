@@ -74,13 +74,3 @@ def configure_logging(
         config_logger.info(f"Log file: {os.path.abspath(log_file)}")
     else:
         config_logger.info("Logging to stderr")
-
-
-def get_available_log_levels() -> List[str]:
-    """
-    Returns a list of available logging levels.
-
-    Returns:
-        List of log level names
-    """
-    return ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
