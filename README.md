@@ -205,6 +205,24 @@ export STRANDS_SYSTEM_PROMPT="You are a Python expert."
 echo "You are a security expert." > .prompt
 ```
 
+## 🌍 Environment Variables Configuration
+
+Strands Agent Builder also provides customization through environment variables:
+
+| Environment Variable | Description | Default | 
+|----------------------|-------------|---------|
+| STRANDS_MODEL_ID | Claude model ID to use for inference | us.anthropic.claude-sonnet-4-20250514-v1:0 |
+| STRANDS_MAX_TOKENS | Maximum tokens for agent responses | 32768 |
+| STRANDS_BUDGET_TOKENS | Token budget for agent thinking/reasoning | 2048 |
+| STRANDS_THINKING_TYPE | Type of thinking capability | enabled |
+| STRANDS_ANTHROPIC_BETA | Anthropic beta features (comma-separated) | interleaved-thinking-2025-05-14 |
+| STRANDS_CACHE_TOOLS | Tool caching strategy | default |
+| STRANDS_CACHE_PROMPT | Prompt caching strategy | default |
+| STRANDS_SYSTEM_PROMPT | Custom system prompt (overrides .prompt file) | None |
+| STRANDS_KNOWLEDGE_BASE_ID | Default Knowledge Base ID | None |
+| STRANDS_TOOL_CONSOLE_MODE | Enable rich console UI | enabled |
+| BYPASS_TOOL_CONSENT | Skip tool confirmation prompts | false |
+
 ## Exit
 
 Type `exit`, `quit`, or press `Ctrl+C`/`Ctrl+D`
