@@ -72,7 +72,7 @@ Strands comes with a comprehensive set of built-in tools:
 
 - **agent_graph**: Create and manage graphs of agents
 - **calculator**: Perform mathematical operations
-- **cron**: Task scheduling with cron jobs
+- **cron**: Task scheduling with cron jobs *(not available on Windows)*
 - **current_time**: Get the current date and time
 - **editor**: File editing operations like line edits, search, and undo
 - **environment**: Manage environment variables
@@ -83,9 +83,9 @@ Strands comes with a comprehensive set of built-in tools:
 - **load_tool**: Dynamically load more tools at runtime
 - **memory**: Agent memory persistence in Amazon Bedrock Knowledge Bases
 - **nova_reels**: Create AI generated videos with Nova Reels on Amazon Bedrock
-- **python_repl**: Run Python code
+- **python_repl**: Run Python code *(not available on Windows)*
 - **retrieve**: Semantically retrieve data from Amazon Bedrock Knowledge Bases for RAG, memory, and other purposes
-- **shell**: Execute shell commands
+- **shell**: Execute shell commands *(not available on Windows)*
 - **slack**: Slack integration with real-time events, API access, and message sending
 - **speak**: Generate speech from text using macOS say command or Amazon Polly
 - **stop**: Force stop the agent event loop
