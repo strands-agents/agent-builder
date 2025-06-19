@@ -49,7 +49,6 @@ def get_tools() -> dict[str, Any]:
     tools = {
         "agent_graph": agent_graph,
         "calculator": calculator,
-        "cron": cron,
         "current_time": current_time,
         "editor": editor,
         "environment": environment,
@@ -86,6 +85,7 @@ def get_tools() -> dict[str, Any]:
         )
 
         tools |= {
+            "cron": cron,
             "python_repl": python_repl,
             "shell": shell,
         }
