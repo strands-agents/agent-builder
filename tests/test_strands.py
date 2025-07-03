@@ -45,7 +45,7 @@ class TestInteractiveMode:
         mock_user_input.assert_called_with("\n~ ", default="", keyboard_interrupt_return_default=False)
 
         # Verify user input was processed
-        mock_agent.assert_called_with("test query", system_prompt=mock.ANY)
+        mock_agent.assert_called_with("test query")
 
         # Verify goodbye message was rendered
         mock_goodbye_message.assert_called_once()
@@ -395,13 +395,9 @@ class TestKnowledgeBaseIntegration:
         with mock.patch.object(strands, "render_welcome_message"), mock.patch.object(strands, "render_goodbye_message"):
             strands.main()
 
-        # Extract the system_prompt from the agent call
-        call_args, call_kwargs = mock_agent.call_args
-        system_prompt = call_kwargs.get("system_prompt")
-
         # Verify system prompt includes both base prompt and welcome text
-        assert base_system_prompt in system_prompt
-        assert "Custom welcome text" in system_prompt
+        assert base_system_prompt in mock_agent.system_prompt
+        assert "Custom welcome text" in mock_agent.system_prompt
 
     def test_welcome_message_failure(
         self,
@@ -430,10 +426,5 @@ class TestKnowledgeBaseIntegration:
         with mock.patch.object(strands, "render_welcome_message"), mock.patch.object(strands, "render_goodbye_message"):
             strands.main()
 
-        # Verify agent was called with system prompt that includes welcome text reference
-        # Even with error status, the code adds a "Welcome Text Reference:" section (just empty)
-        expected_system_prompt = f"{base_system_prompt}\n\nWelcome Text Reference:\n"
-        call_args, call_kwargs = mock_agent.call_args
-        system_prompt = call_kwargs.get("system_prompt")
-
-        assert system_prompt == expected_system_prompt
+        # Verify agent was called with system prompt that excludes welcome text reference
+        assert mock_agent.system_prompt == base_system_prompt

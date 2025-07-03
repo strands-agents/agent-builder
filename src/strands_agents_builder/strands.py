@@ -112,11 +112,13 @@ def main():
                     welcome_text = ""
 
                     if welcome_result["status"] == "success":
+                        # Combine welcome text with base system prompt
                         welcome_text = welcome_result["content"][0]["text"]
+                        agent.system_prompt = f"{base_system_prompt}\n\nWelcome Text Reference:\n{welcome_text}"
+                    else:
+                        agent.system_prompt = base_system_prompt
 
-                    # Combine welcome text with base system prompt
-                    combined_system_prompt = f"{base_system_prompt}\n\nWelcome Text Reference:\n{welcome_text}"
-                    response = agent(user_input, system_prompt=combined_system_prompt)
+                    response = agent(user_input)
 
                     if knowledge_base_id:
                         # Store conversation in knowledge base
