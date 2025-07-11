@@ -1,8 +1,7 @@
 """Create instance of SDK's Bedrock model provider."""
 
 from botocore.config import Config as BotocoreConfig
-from strands.models import BedrockModel
-from strands.types.models import Model
+from strands.models import BedrockModel, Model
 from typing_extensions import Unpack
 
 

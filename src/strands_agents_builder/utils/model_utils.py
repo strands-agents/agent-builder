@@ -7,7 +7,7 @@ import pathlib
 from typing import Any
 
 from botocore.config import Config
-from strands.types.models import Model
+from strands.models import Model
 
 # Default model configuration
 DEFAULT_MODEL_CONFIG = {
