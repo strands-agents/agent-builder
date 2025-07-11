@@ -37,9 +37,7 @@ class TestStrandTool:
     def test_strand_empty_query(self):
         """Test handling of empty query"""
         # Call the strand tool with empty query
-        tool_use = {"toolUseId": "test_id", "input": {"query": ""}}
-
-        result = strand(tool_use)
+        result = strand(query="")
 
         # Verify error response
         assert result["status"] == "error"
@@ -54,12 +52,8 @@ class TestStrandTool:
             mock_agent_instance.return_value = {"status": "success", "content": [{"text": "Agent response"}]}
 
             # Call the strand tool with custom prompt
-            tool_use = {
-                "toolUseId": "test_id",
-                "input": {"query": "test query", "system_prompt": "Custom system prompt"},
-            }
             # Store result to validate return value
-            result = strand(tool_use)
+            result = strand(query="test query", system_prompt="Custom system prompt")
             assert result["status"] == "success"
 
             # Verify agent was created with custom prompt

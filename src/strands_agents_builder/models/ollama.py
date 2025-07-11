@@ -2,8 +2,8 @@
 
 from typing import Optional
 
+from strands.models import Model
 from strands.models.ollama import OllamaModel
-from strands.types.models import Model
 from typing_extensions import Unpack
 
 
