@@ -204,6 +204,7 @@ agent = Agent(
     callback_handler=custom_handler,  # Optional custom output handling
     max_parallel_tools=4,  # Configure parallel tool execution
     record_direct_tool_call=True,  # Record direct tool calls in history
+    load_tools_from_directory=True, # Auto load tools from tools directory
     hot_reload_tools=True  # Reload tools if changed at runtime
 )
 ```

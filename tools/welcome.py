@@ -16,7 +16,7 @@ DEFAULT_WELCOME_TEXT = '''# 🚀 STRANDS AGENTS SDK: Self-Extending AI Tool Buil
 from strands import Agent, tool
 from strands_tools import load_tool, shell, editor
 
-agent = Agent(tools=[load_tool, shell, editor])
+agent = Agent(tools=[load_tool, shell, editor], load_tools_from_directory=True)
 ```
 
 ### 2️⃣ Tool Definition Pattern

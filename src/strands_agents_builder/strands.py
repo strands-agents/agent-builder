@@ -58,6 +58,7 @@ def main():
         tools=tools,
         system_prompt=system_prompt,
         callback_handler=callback_handler,
+        load_tools_from_directory=True,
     )
 
     # Process query or enter interactive mode
