@@ -4,6 +4,7 @@ Strands - A minimal CLI interface for Strands
 """
 
 import argparse
+import logging
 import os
 
 # Strands
@@ -14,6 +15,7 @@ from strands_agents_builder.handlers.callback_handler import callback_handler
 from strands_agents_builder.tools import get_tools
 from strands_agents_builder.utils import model_utils
 from strands_agents_builder.utils.kb_utils import load_system_prompt, store_conversation_in_kb
+from strands_agents_builder.utils.logging_utils import configure_logging
 from strands_agents_builder.utils.welcome_utils import render_goodbye_message, render_welcome_message
 
 os.environ["STRANDS_TOOL_CONSOLE_MODE"] = "enabled"
@@ -41,7 +43,33 @@ def main():
         default="{}",
         help="Model config as JSON string or path",
     )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default=None,
+        choices=list(logging.getLevelNamesMapping().keys()),
+        help="Set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    )
+    parser.add_argument(
+        "--log-file",
+        type=str,
+        help="Path to log file. If not specified, logs to stderr when log-level is set",
+    )
     args = parser.parse_args()
+
+    # Configure logging based on provided arguments
+    if args.log_level or args.log_file:
+        # Default to INFO level if log_file is provided but log_level is not
+        log_level = args.log_level or "INFO"
+        configure_logging(log_level=log_level, log_file=args.log_file)
+
+        # Get module logger for startup messages
+        logger = logging.getLogger("strands_agents_builder")
+        logger.info(f"Strands CLI started with log level {log_level}")
+        if args.log_file:
+            logger.info(f"Log file: {os.path.abspath(args.log_file)}")
+        else:
+            logger.info("Logging to stderr")
 
     # Get knowledge_base_id from args or environment variable
     knowledge_base_id = args.knowledge_base_id or os.getenv("STRANDS_KNOWLEDGE_BASE_ID")
