@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "strands-agents[ollama]>=0.3.0,<1.0.0",
+    "strands-agents[ollama]>=1.0.0",
     "strands-agents-tools>=0.1.0,<1.0.0",
     "rich>=14.0.0,<15.0.0",
     "prompt_toolkit>=3.0.51,<4.0.0",
