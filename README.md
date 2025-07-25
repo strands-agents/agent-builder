@@ -46,7 +46,7 @@ strands
 # Build a custom tool and use it immediately
 strands "Create a tool named sentiment_analyzer that analyzes text sentiment and test it with some examples"
 
-# Pipe content to build an agent based on specifications
+# Piped input with additional instructions (requires BYPASS_TOOL_CONSENT=true)
 cat agent-spec.txt | strands "Build a specialized agent based on these specifications"
 
 # Use with knowledge base to extend existing tools
@@ -226,6 +226,28 @@ Strands Agent Builder also provides customization through environment variables:
 ## Exit
 
 Type `exit`, `quit`, or press `Ctrl+C`/`Ctrl+D`
+
+## Usage Patterns
+
+Strands Agent Builder supports these input methods:
+
+**Direct command:**
+```
+strands "Your instruction here"
+```
+
+**Piped input:**
+```
+cat your-file.txt | strands
+echo "Your instruction" | strands
+```
+
+**Combined piped input with additional instructions:**
+```
+# Requires BYPASS_TOOL_CONSENT=true to avoid confirmation prompts
+export BYPASS_TOOL_CONSENT=true
+cat agent-spec.txt | strands "Build a specialized agent based on these specifications"
+```
 
 ## Contributing ❤️
 
