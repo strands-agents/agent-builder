@@ -71,7 +71,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          hatch test tests
+          hatch run test tests
 
   format:
     name: Format Check
