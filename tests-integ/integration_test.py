@@ -5,7 +5,6 @@ from unittest import mock
 
 import pytest
 from strands.agent import Agent
-from strands.models import BedrockModel
 
 from strands_agents_builder import strands
 
@@ -13,17 +12,9 @@ from strands_agents_builder import strands
 @pytest.fixture
 def tmp_file_structure(tmp_path: Path):
     """Creates a temporary directory structure for tool creation and returns paths."""
-    tools_dir = tmp_path / ".strand" / "tools"
+    tools_dir = tmp_path / ".strands" / "tools"
     tools_dir.mkdir(parents=True, exist_ok=True)
     return {"tools_dir": tools_dir, "root_dir": tmp_path}
-
-
-@pytest.fixture
-def bedrock_model():
-    return BedrockModel(
-        model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-        streaming=True,
-    )
 
 
 @mock.patch.object(sys, "stdin")
@@ -32,7 +23,7 @@ def bedrock_model():
 @mock.patch("os.getcwd")
 @mock.patch.dict("os.environ", {"STRANDS_TOOL_CONSOLE_MODE": "enabled", "STRANDS_KNOWLEDGE_BASE_ID": "test-kb-cli"})
 def test_mock_cli_create_calculator_then_validate(
-    mock_getcwd, mock_chdir, mock_argv, mock_stdin, capsys, tmp_file_structure: dict, bedrock_model
+    mock_getcwd, mock_chdir, mock_argv, mock_stdin, capsys, tmp_file_structure: dict
 ):
     """
     Test creating a calculator tool via CLI and validating its functionality.
@@ -49,7 +40,6 @@ def test_mock_cli_create_calculator_then_validate(
         strands.main()
 
         agent = Agent(
-            model=bedrock_model,
             load_tools_from_directory=True,
         )
 
@@ -80,7 +70,7 @@ def test_cli_query_with_kb(mock_argv, capsys):
 @mock.patch.object(sys, "argv")
 @mock.patch("os.chdir")
 @mock.patch("os.getcwd")
-@mock.patch.dict("os.environ", {"STRANDS_TOOL_CONSOLE_MODE": "enabled", "STRANDS_KNOWLEDGE_BASE_ID": "test-kb-cli"})
+@mock.patch.dict("os.environ", {"STRANDS_TOOL_CONSOLE_MODE": "enabled"})
 def test_cli_with_custom_tool_load_tool(
     mock_getcwd, mock_chdir, mock_argv, mock_user_input, capsys, tmp_file_structure
 ):
@@ -117,7 +107,7 @@ def reverse_text(text: str) -> dict:
 
 @mock.patch.object(strands, "get_user_input")
 @mock.patch.object(sys, "argv")
-@mock.patch.dict("os.environ", {"STRANDS_TOOL_CONSOLE_MODE": "enabled", "STRANDS_KNOWLEDGE_BASE_ID": "test-kb-cli"})
+@mock.patch.dict("os.environ", {"STRANDS_TOOL_CONSOLE_MODE": "enabled"})
 def test_cli_shell_and_interactive_mode(mock_argv, mock_user_input, capsys):
     """Test interactive mode with a shell command."""
     mock_argv.__getitem__.side_effect = lambda i: ["strands"][i]
