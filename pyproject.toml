@@ -144,7 +144,12 @@ test = [
 ]
 
 test-integ = [
-    "hatch test tests-integ {args}"
+    "hatch test tests_integ {args}"
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
 ]
 
 [tool.mypy]
@@ -165,7 +170,7 @@ ignore_missing_imports = false
 
 [tool.ruff]
 line-length = 120
-include = ["src/**/*.py", "tests/**/*.py", "tools/**/*.py","tests-integ/**/*.py"]
+include = ["src/**/*.py", "tests/**/*.py", "tools/**/*.py","tests_integ/**/*.py"]
 
 [tool.ruff.lint]
 select = [
