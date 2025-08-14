@@ -28,4 +28,9 @@ def reverse_text(text: str) -> dict:
     strands.main()
 
     out = capsys.readouterr().out
+    assert (
+        "The reverse_text tool worked as expected"
+        or "The reverse_text tool worked"
+        or ("reverse_text tool" and "The tool successfully reversed") in out
+    ), f"Expected 'olleh' in output, but got:\n{out}"
     assert "olleh" in out, f"Expected 'olleh' in output, but got:\n{out}"

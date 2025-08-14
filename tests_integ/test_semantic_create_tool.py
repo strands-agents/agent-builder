@@ -1,4 +1,3 @@
-import io
 import sys
 from unittest import mock
 
@@ -7,15 +6,14 @@ from strands.agent import Agent
 from strands_agents_builder import strands
 
 
-@mock.patch.object(sys, "stdin")
+@mock.patch("strands_tools.utils.user_input.get_user_input", return_value="y")
 @mock.patch.dict("os.environ", {"STRANDS_TOOL_CONSOLE_MODE": "enabled"})
-def test_interactive_model_create_tool_then_validate(mock_stdin, capsys, tmp_file_structure):
+def test_interactive_model_create_tool_then_validate(mock_get_user_input, capsys, tmp_file_structure):
     """
     Test creating a calculator tool via CLI and validating its functionality.
     """
     with mock.patch.dict("os.environ", {"STRANDS_TOOLS_DIR": str(tmp_file_structure["tools_dir"])}):
         test_query = "create a tool that can only calculate sum of two number called calculator"
-        mock_stdin.return_value = io.StringIO("y\ny\ny\n")
 
         with mock.patch.object(sys, "argv", ["strands", test_query]):
             strands.main()
@@ -33,3 +31,12 @@ def test_interactive_model_create_tool_then_validate(mock_stdin, capsys, tmp_fil
             response = agent(question)
             response_str = str(response).lower()
             assert expected in response_str, f"Expected '{expected}' in response for '{question}', got '{response_str}'"
+
+            # Verify the calculator tool was actually used by checking for toolResults
+            calculator_used = any(
+                content.get("toolUse", {}).get("name") == "calculator"
+                for message in agent.messages
+                for content in message.get("content", [])
+                if content.get("toolUse")
+            )
+            assert calculator_used, f"Calculator tool should have been used for question: '{question}'"
