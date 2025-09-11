@@ -5,11 +5,18 @@ Unit tests for the strands.py module using pytest
 
 import os
 import sys
+import tempfile
+from pathlib import Path
 from unittest import mock
 
 import pytest
 
 from strands_agents_builder import strands
+from strands_agents_builder.utils.session_utils import (
+    list_sessions_command,
+    setup_session_management,
+    handle_session_commands,
+)
 
 
 class TestInteractiveMode:
@@ -167,11 +174,11 @@ class TestInteractiveMode:
         # Verify goodbye message was called
         mock_goodbye.assert_called_once()
 
+    @mock.patch("builtins.print")
     @mock.patch.object(strands, "get_user_input")
     @mock.patch.object(strands, "Agent")
-    @mock.patch.object(strands, "print")
     @mock.patch.object(strands, "callback_handler")
-    def test_general_exception_handling(self, mock_callback_handler, mock_print, mock_agent, mock_input):
+    def test_general_exception_handling(self, mock_callback_handler, mock_agent, mock_input, mock_print):
         """Test handling of general exceptions in interactive mode"""
         # Setup mocks
         mock_agent_instance = mock.MagicMock()
@@ -188,8 +195,8 @@ class TestInteractiveMode:
         with mock.patch.object(sys, "argv", ["strands"]), mock.patch.object(strands, "render_goodbye_message"):
             strands.main()
 
-        # Verify error was printed
-        mock_print.assert_any_call("\nError: Test error")
+        # Verify error was called
+        mock_print.assert_any_call("Error: Test error")
 
         # Verify callback_handler was called to stop spinners
         mock_callback_handler.assert_called_once_with(force_stop=True)
@@ -328,8 +335,8 @@ class TestShellCommandError:
         with mock.patch.object(strands, "render_goodbye_message"):
             strands.main()
 
-        # Verify error was printed
-        mock_print.assert_any_call("Shell command execution error: Shell command failed")
+        # Verify error was called
+        mock_print.assert_any_call("Error: Shell command failed")
 
 
 class TestKnowledgeBaseIntegration:
@@ -428,3 +435,329 @@ class TestKnowledgeBaseIntegration:
 
         # Verify agent was called with system prompt that excludes welcome text reference
         assert mock_agent.system_prompt == base_system_prompt
+
+
+class TestSessionManagement:
+    """Test cases for session management functionality"""
+
+    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.list_available_sessions")
+    def test_list_sessions_command_no_sessions(self, mock_list_sessions, mock_print):
+        """Test list-sessions command when no sessions exist"""
+        # Setup mocks
+        mock_list_sessions.return_value = []
+
+        # Mock sys.argv with session path
+        with mock.patch.object(sys, "argv", ["strands", "--list-sessions", "--session-path", "/tmp/sessions"]):
+            strands.main()
+
+        # Verify appropriate message was called
+        mock_print.assert_any_call("No sessions found.")
+
+    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.get_session_info")
+    @mock.patch("strands_agents_builder.utils.session_utils.list_available_sessions")
+    def test_list_sessions_command_with_sessions(self, mock_list_sessions, mock_get_info, mock_print):
+        """Test list-sessions command when sessions exist"""
+        # Setup mocks
+        mock_list_sessions.return_value = ["session1", "session2"]
+        mock_get_info.side_effect = [
+            {"session_id": "session1", "created_at": 1234567890, "total_messages": 5},
+            {"session_id": "session2", "created_at": 1234567891, "total_messages": 3},
+        ]
+
+        # Mock sys.argv with session path
+        with mock.patch.object(sys, "argv", ["strands", "--list-sessions", "--session-path", "/tmp/sessions"]):
+            strands.main()
+
+        # Verify sessions were listed
+        mock_print.assert_any_call("Available sessions:")
+        # Check that session info was called for each session
+        mock_get_info.assert_any_call("session1", "/tmp/sessions")
+        mock_get_info.assert_any_call("session2", "/tmp/sessions")
+
+    @mock.patch("builtins.print")
+    def test_list_sessions_command_no_base_path(self, mock_print):
+        """Test list-sessions command when no session path is configured"""
+        # Mock sys.argv without session path
+        with mock.patch.object(sys, "argv", ["strands", "--list-sessions"]):
+            strands.main()
+
+        # Verify appropriate error message was called
+        mock_print.assert_called_with(
+            "Error: Session management not enabled. Use --session-path or set STRANDS_SESSION_PATH environment variable."
+        )
+
+    @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
+    def test_session_management_setup_with_path(self, mock_create_manager, mock_agent, mock_bedrock, mock_load_prompt):
+        """Test session management setup when session path is provided"""
+        # Setup mocks
+        mock_manager = mock.MagicMock()
+        mock_manager.session_id = "test-session-123"
+        mock_create_manager.return_value = mock_manager
+
+        # Mock sys.argv with session path
+        with mock.patch.object(sys, "argv", ["strands", "--session-path", "/tmp/test_sessions", "test", "query"]):
+            strands.main()
+
+        # Verify session manager was created
+        mock_create_manager.assert_called_once_with(None, "/tmp/test_sessions")
+
+    @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
+    def test_session_management_setup_with_env_var(
+        self, mock_create_manager, mock_agent, mock_bedrock, mock_load_prompt
+    ):
+        """Test session management setup when environment variable is set"""
+        # Setup mocks
+        mock_manager = mock.MagicMock()
+        mock_manager.session_id = "test-session-456"
+        mock_create_manager.return_value = mock_manager
+
+        # Mock environment variable and sys.argv
+        with mock.patch.dict(os.environ, {"STRANDS_SESSION_PATH": "/tmp/env_sessions"}):
+            with mock.patch.object(sys, "argv", ["strands", "test", "query"]):
+                strands.main()
+
+        # Verify session manager was created
+        mock_create_manager.assert_called_once_with(None, "/tmp/env_sessions")
+
+    @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
+    def test_session_management_no_setup_when_no_path(
+        self, mock_create_manager, mock_agent, mock_bedrock, mock_load_prompt
+    ):
+        """Test that session management is not set up when no path is provided"""
+        # Mock sys.argv without session path
+        with mock.patch.object(sys, "argv", ["strands", "test", "query"]):
+            strands.main()
+
+        # Verify session manager was not created
+        mock_create_manager.assert_not_called()
+
+    @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
+    def test_agent_creation_with_session_manager(self, mock_create_manager, mock_bedrock, mock_load_prompt):
+        """Test that agent is created with session manager when available"""
+        # Setup mocks
+        mock_manager = mock.MagicMock()
+        mock_manager.session_id = "test-session-789"
+        mock_create_manager.return_value = mock_manager
+
+        with mock.patch.object(strands, "Agent") as mock_agent_class:
+            mock_agent_instance = mock.MagicMock()
+            mock_agent_class.return_value = mock_agent_instance
+
+            # Mock sys.argv with session path
+            with mock.patch.object(sys, "argv", ["strands", "--session-path", "/tmp/test_sessions", "test", "query"]):
+                strands.main()
+
+            # Verify agent was created with session manager
+            mock_agent_class.assert_called_once()
+            call_kwargs = mock_agent_class.call_args[1]
+            assert "session_manager" in call_kwargs
+            assert call_kwargs["session_manager"] == mock_manager
+
+    @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
+    def test_agent_creation_without_session_manager(self, mock_create_manager, mock_bedrock, mock_load_prompt):
+        """Test that agent is created without session manager when not available"""
+        # Setup mocks - no session manager created
+        mock_create_manager.return_value = None
+
+        with mock.patch.object(strands, "Agent") as mock_agent_class:
+            mock_agent_instance = mock.MagicMock()
+            mock_agent_class.return_value = mock_agent_instance
+
+            # Mock sys.argv without session path
+            with mock.patch.object(sys, "argv", ["strands", "test", "query"]):
+                strands.main()
+
+            # Verify agent was created without session manager
+            mock_agent_class.assert_called_once()
+            call_kwargs = mock_agent_class.call_args[1]
+            assert "session_manager" not in call_kwargs or call_kwargs.get("session_manager") is None
+
+    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
+    @mock.patch("strands_agents_builder.utils.session_utils.get_session_info")
+    def test_session_commands_in_interactive_mode(
+        self,
+        mock_get_info,
+        mock_create_manager,
+        mock_print,
+        mock_agent,
+        mock_bedrock,
+        mock_load_prompt,
+        mock_user_input,
+        mock_welcome_message,
+        mock_goodbye_message,
+    ):
+        """Test session-related commands in interactive mode"""
+        # Setup mocks for session commands
+        mock_user_input.side_effect = ["!session info", "exit"]
+
+        # Mock session manager and info
+        mock_manager = mock.MagicMock()
+        mock_manager.session_id = "test-session-123"
+        mock_create_manager.return_value = mock_manager
+        mock_get_info.return_value = {
+            "session_id": "test-session-123",
+            "created_at": 1234567890,
+            "total_messages": 5,
+            "path": "/tmp/sessions/session_test-session-123",
+        }
+
+        # Run with session path
+        with mock.patch.object(sys, "argv", ["strands", "--session-path", "/tmp/sessions"]):
+            strands.main()
+
+        # Verify session info was retrieved
+        mock_get_info.assert_called_once_with("test-session-123", "/tmp/sessions")
+
+    @mock.patch("strands_agents_builder.utils.session_utils.session_exists")
+    @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
+    def test_resume_session_command(self, mock_create_manager, mock_session_exists, mock_bedrock, mock_load_prompt):
+        """Test --session-id command line argument for resuming sessions"""
+        # Setup mocks
+        mock_session_exists.return_value = True
+        mock_manager = mock.MagicMock()
+        mock_manager.session_id = "test_session"
+        mock_create_manager.return_value = mock_manager
+
+        with mock.patch.object(strands, "Agent") as mock_agent_class:
+            mock_agent_instance = mock.MagicMock()
+            mock_agent_class.return_value = mock_agent_instance
+
+            # Mock sys.argv with session ID
+            with mock.patch.object(
+                sys,
+                "argv",
+                ["strands", "--session-path", "/tmp/sessions", "--session-id", "test_session", "new", "query"],
+            ):
+                strands.main()
+
+            # Verify session existence was checked
+            mock_session_exists.assert_called_once_with("test_session", "/tmp/sessions")
+
+            # Verify session manager was created with the specified ID
+            mock_create_manager.assert_called_once_with("test_session", "/tmp/sessions")
+
+            # Session resuming is now silent, no message printed
+
+    @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
+    def test_session_path_argument_priority(self, mock_create_manager, mock_agent, mock_bedrock, mock_load_prompt):
+        """Test that --session-path argument takes priority over environment variable"""
+        # Setup environment variable
+        with mock.patch.dict(os.environ, {"STRANDS_SESSION_PATH": "/tmp/env_sessions"}):
+            # Mock sys.argv with different session path
+            with mock.patch.object(sys, "argv", ["strands", "--session-path", "/tmp/arg_sessions", "test", "query"]):
+                strands.main()
+
+            # Verify command line argument was used, not environment variable
+            mock_create_manager.assert_called_once_with(None, "/tmp/arg_sessions")
+
+
+class TestHelperFunctions:
+    """Test cases for helper functions extracted during refactoring"""
+
+    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.get_session_info")
+    @mock.patch("strands_agents_builder.utils.session_utils.list_available_sessions")
+    def test_list_sessions_command_function(self, mock_list_sessions, mock_get_info, mock_console_print):
+        """Test the list_sessions_command function directly"""
+        # Test with sessions available
+        mock_list_sessions.return_value = ["session1", "session2"]
+        mock_get_info.side_effect = [
+            {"session_id": "session1", "created_at": 1234567890, "total_messages": 5},
+            {"session_id": "session2", "created_at": 1234567891, "total_messages": 3},
+        ]
+
+        list_sessions_command("/tmp/sessions")
+
+        mock_console_print.assert_any_call("[bold cyan]Available sessions:[/bold cyan]")
+        # Verify get_session_info was called for each session
+        mock_get_info.assert_any_call("session1", "/tmp/sessions")
+        mock_get_info.assert_any_call("session2", "/tmp/sessions")
+
+    @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
+    @mock.patch("strands_agents_builder.utils.session_utils.session_exists")
+    def test_setup_session_management_function(self, mock_session_exists, mock_create_manager):
+        """Test the setup_session_management function directly"""
+
+        # Test creating new session (no session_id provided)
+        mock_manager = mock.MagicMock()
+        mock_manager.session_id = "generated-session-123"
+        mock_create_manager.return_value = mock_manager
+
+        result_manager, result_id, is_resuming = setup_session_management(None, "/tmp/test_sessions")
+
+        assert result_manager == mock_manager
+        assert result_id == "generated-session-123"
+        assert is_resuming is False
+        mock_create_manager.assert_called_with(None, "/tmp/test_sessions")
+
+        # Test resuming existing session
+        mock_session_exists.return_value = True
+        mock_manager.session_id = "existing-session"
+
+        result_manager, result_id, is_resuming = setup_session_management("existing-session", "/tmp/test_sessions")
+
+        assert result_manager == mock_manager
+        assert result_id == "existing-session"
+        assert is_resuming is True
+
+        # Test creating session with provided ID (session doesn't exist)
+        mock_session_exists.return_value = False
+
+        result_manager, result_id, is_resuming = setup_session_management("existing-session", "/tmp/test_sessions")
+
+        assert result_manager == mock_manager
+        assert result_id == "existing-session"
+        assert is_resuming is False
+
+    def test_execute_command_mode_function(self):
+        """Test the execute_command_mode function directly"""
+        # Create mock agent
+        mock_agent = mock.MagicMock()
+
+        # Test command execution
+        strands.execute_command_mode(agent=mock_agent, query="test query", knowledge_base_id=None)
+
+        # Verify agent was called with the query
+        mock_agent.assert_called_with("test query")
+
+    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.get_session_info")
+    def test_handle_session_commands_function(self, mock_get_info, mock_print):
+        """Test the handle_session_commands function directly"""
+
+        # Mock session info
+        mock_get_info.return_value = {
+            "session_id": "test-session",
+            "created_at": 1234567890,
+            "total_messages": 5,
+            "path": "/tmp/sessions/session_test-session",
+        }
+
+        # Test session info command
+        result = handle_session_commands("session info", "test-session", "/tmp/sessions")
+        assert result is True
+        mock_get_info.assert_called_once_with("test-session", "/tmp/sessions")
+
+        # Test non-session command
+        result = handle_session_commands("regular command", "test-session", "/tmp/sessions")
+        assert result is False
+
+    @mock.patch("builtins.print")
+    def test_handle_shell_command_function(self, mock_print):
+        """Test the handle_shell_command function directly"""
+        # Create mock agent
+        mock_agent = mock.MagicMock()
+
+        # Test shell command handling
+        strands.handle_shell_command(mock_agent, "ls -la", "!ls -la")
+
+        # Verify shell command was executed
+        mock_agent.tool.shell.assert_called_with(
+            command="ls -la", user_message_override="!ls -la", non_interactive_mode=True
+        )
+
+        # Verify print was called with shell command
+        mock_print.assert_called_with("$ ls -la")

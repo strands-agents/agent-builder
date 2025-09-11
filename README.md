@@ -65,6 +65,7 @@ strands --kb YOUR_KB_ID "Load my previous calculator tool and enhance it with sc
 - 🪄 Nested agent capabilities with tool delegation
 - 🔧 Dynamic tool loading for extending functionality
 - 🖥️ Environment variable management and customization
+- 💾 **Session Management**: Optional state persistence and conversation resumption
 
 ## Integrated Tools
 
@@ -97,6 +98,35 @@ Strands comes with a comprehensive set of built-in tools:
 - **use_llm**: Run a new AI event loop with custom prompts
 - **welcome**: Manage the Strands Agent Builder welcome text
 - **workflow**: Orchestrate sequenced workflows
+
+## Session Management
+
+Strands Agent Builder includes optional session management that automatically saves your conversation state and allows you to resume conversations exactly where you left off.
+
+```bash
+# Enable session management with a custom path
+strands --session-path /path/to/sessions "Create a complex agent"
+# Output: Created new session: strands-1234567890-abc123
+
+# Or use environment variable
+export STRANDS_SESSION_PATH=/path/to/sessions
+strands "Create a complex agent"
+
+# Resume any session exactly where you left off
+strands --session-path /path/to/sessions --session-id strands-1234567890-abc123
+
+# List all your saved sessions
+strands --session-path /path/to/sessions --list-sessions
+
+# Interactive session commands (when session management is enabled)
+!session info    # Show current session details
+!session list    # List all sessions
+```
+
+**Configuration:**
+- Use `--session-path <path>` to specify where sessions are stored
+- Or set `STRANDS_SESSION_PATH` environment variable
+- Sessions are only enabled when a path is provided
 
 ## Knowledge Base Integration
 

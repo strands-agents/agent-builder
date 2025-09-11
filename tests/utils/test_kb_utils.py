@@ -26,13 +26,13 @@ def test_load_system_prompt_from_file():
         # Setup mock path instances
         mock_cwd_path = mock.MagicMock()
         mock_prompt_file = mock.MagicMock()
-        
+
         # Mock Path constructor to return mock_cwd_path
         mock_path_class.return_value = mock_cwd_path
-        
+
         # Mock the / operator to return mock_prompt_file
         mock_cwd_path.__truediv__.return_value = mock_prompt_file
-        
+
         # Setup mock_prompt_file behavior
         mock_prompt_file.exists.return_value = True
         mock_prompt_file.is_file.return_value = True
@@ -55,13 +55,13 @@ def test_load_default_system_prompt():
         # Setup mock path instances
         mock_cwd_path = mock.MagicMock()
         mock_prompt_file = mock.MagicMock()
-        
+
         # Mock Path constructor to return mock_cwd_path
         mock_path_class.return_value = mock_cwd_path
-        
+
         # Mock the / operator to return mock_prompt_file
         mock_cwd_path.__truediv__.return_value = mock_prompt_file
-        
+
         # Setup mock_prompt_file behavior - file doesn't exist
         mock_prompt_file.exists.return_value = False
 

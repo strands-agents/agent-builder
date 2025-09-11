@@ -105,3 +105,39 @@ def temp_file(tmp_path):
         return file_path
 
     return _create_file
+
+
+@pytest.fixture
+def mock_session_manager():
+    """
+    Fixture to mock the session manager
+    """
+    with mock.patch("strands_agents_builder.utils.session_utils.FileSessionManager") as mock_manager_class:
+        mock_manager_instance = mock.MagicMock()
+        mock_manager_class.return_value = mock_manager_instance
+
+        # Set up default return values
+        mock_manager_instance.list_sessions.return_value = []
+        mock_manager_instance.save_session.return_value = True
+        mock_manager_instance.load_session.return_value = {"messages": []}
+
+        yield mock_manager_instance
+
+
+@pytest.fixture
+def temp_session_dir(tmp_path):
+    """
+    Fixture to create a temporary session directory
+    """
+    session_dir = tmp_path / "test_sessions"
+    session_dir.mkdir()
+    return session_dir
+
+
+@pytest.fixture(autouse=True)
+def suppress_console_output():
+    """
+    Fixture to suppress console output during tests
+    """
+    # No longer needed since we removed console utils abstraction
+    yield
