@@ -105,11 +105,25 @@ class TestStrandTool:
     def test_strand_file_system_prompt(self):
         """Test loading system prompt from file"""
         with (
-            mock.patch("pathlib.Path.exists", return_value=True),
-            mock.patch("pathlib.Path.is_file", return_value=True),
-            mock.patch("pathlib.Path.read_text", return_value="Prompt from file\n"),
+            mock.patch("src.strands_agents_builder.utils.kb_utils.os.getenv", return_value=None),
+            mock.patch("src.strands_agents_builder.utils.kb_utils.os.getcwd", return_value="/test/dir"),
+            mock.patch("src.strands_agents_builder.utils.kb_utils.Path") as mock_path_class,
             mock.patch("tools.strand.Agent") as mock_agent_class,
         ):
+            # Setup mock path instances
+            mock_cwd_path = mock.MagicMock()
+            mock_prompt_file = mock.MagicMock()
+            
+            # Mock Path constructor to return mock_cwd_path
+            mock_path_class.return_value = mock_cwd_path
+            
+            # Mock the / operator to return mock_prompt_file
+            mock_cwd_path.__truediv__.return_value = mock_prompt_file
+            
+            # Setup mock_prompt_file behavior
+            mock_prompt_file.exists.return_value = True
+            mock_prompt_file.is_file.return_value = True
+            mock_prompt_file.read_text.return_value = "Prompt from file\n"
             # Setup mock agent
             mock_agent_instance = mock.MagicMock()
             mock_agent_class.return_value = mock_agent_instance
@@ -169,12 +183,26 @@ class TestStrandTool:
 
         # Create a temporary prompt file
         with (
-            mock.patch("pathlib.Path.exists", return_value=True),
-            mock.patch("pathlib.Path.is_file", return_value=True),
-            mock.patch("pathlib.Path.read_text", return_value="Test prompt from file"),
+            mock.patch("src.strands_agents_builder.utils.kb_utils.os.getenv", return_value=None),
+            mock.patch("src.strands_agents_builder.utils.kb_utils.os.getcwd", return_value="/test/dir"),
+            mock.patch("src.strands_agents_builder.utils.kb_utils.Path") as mock_path_class,
             mock.patch("sys.stdout", new_callable=StringIO),
             mock.patch("tools.strand.Agent") as mock_agent_class,
         ):
+            # Setup mock path instances
+            mock_cwd_path = mock.MagicMock()
+            mock_prompt_file = mock.MagicMock()
+            
+            # Mock Path constructor to return mock_cwd_path
+            mock_path_class.return_value = mock_cwd_path
+            
+            # Mock the / operator to return mock_prompt_file
+            mock_cwd_path.__truediv__.return_value = mock_prompt_file
+            
+            # Setup mock_prompt_file behavior
+            mock_prompt_file.exists.return_value = True
+            mock_prompt_file.is_file.return_value = True
+            mock_prompt_file.read_text.return_value = "Test prompt from file"
             # Mock the agent instance
             mock_agent_instance = mock.MagicMock()
             mock_agent_class.return_value = mock_agent_instance
