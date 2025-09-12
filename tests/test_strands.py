@@ -5,17 +5,15 @@ Unit tests for the strands.py module using pytest
 
 import os
 import sys
-import tempfile
-from pathlib import Path
 from unittest import mock
 
 import pytest
 
 from strands_agents_builder import strands
 from strands_agents_builder.utils.session_utils import (
+    handle_session_commands,
     list_sessions_command,
     setup_session_management,
-    handle_session_commands,
 )
 
 
@@ -440,9 +438,9 @@ class TestKnowledgeBaseIntegration:
 class TestSessionManagement:
     """Test cases for session management functionality"""
 
-    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
     @mock.patch("strands_agents_builder.utils.session_utils.list_available_sessions")
-    def test_list_sessions_command_no_sessions(self, mock_list_sessions, mock_print):
+    def test_list_sessions_command_no_sessions(self, mock_list_sessions, mock_console_print):
         """Test list-sessions command when no sessions exist"""
         # Setup mocks
         mock_list_sessions.return_value = []
@@ -452,12 +450,12 @@ class TestSessionManagement:
             strands.main()
 
         # Verify appropriate message was called
-        mock_print.assert_any_call("No sessions found.")
+        mock_console_print.assert_any_call("[yellow]No sessions found.[/yellow]")
 
-    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
     @mock.patch("strands_agents_builder.utils.session_utils.get_session_info")
     @mock.patch("strands_agents_builder.utils.session_utils.list_available_sessions")
-    def test_list_sessions_command_with_sessions(self, mock_list_sessions, mock_get_info, mock_print):
+    def test_list_sessions_command_with_sessions(self, mock_list_sessions, mock_get_info, mock_console_print):
         """Test list-sessions command when sessions exist"""
         # Setup mocks
         mock_list_sessions.return_value = ["session1", "session2"]
@@ -471,21 +469,22 @@ class TestSessionManagement:
             strands.main()
 
         # Verify sessions were listed
-        mock_print.assert_any_call("Available sessions:")
+        mock_console_print.assert_any_call("[bold cyan]Available sessions:[/bold cyan]")
         # Check that session info was called for each session
         mock_get_info.assert_any_call("session1", "/tmp/sessions")
         mock_get_info.assert_any_call("session2", "/tmp/sessions")
 
-    @mock.patch("builtins.print")
-    def test_list_sessions_command_no_base_path(self, mock_print):
+    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
+    def test_list_sessions_command_no_base_path(self, mock_console_print):
         """Test list-sessions command when no session path is configured"""
         # Mock sys.argv without session path
         with mock.patch.object(sys, "argv", ["strands", "--list-sessions"]):
             strands.main()
 
         # Verify appropriate error message was called
-        mock_print.assert_called_with(
-            "Error: Session management not enabled. Use --session-path or set STRANDS_SESSION_PATH environment variable."
+        mock_console_print.assert_called_with(
+            "[red]Error: Session management not enabled. Use --session-path or "
+            "set STRANDS_SESSION_PATH environment variable.[/red]"
         )
 
     @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")

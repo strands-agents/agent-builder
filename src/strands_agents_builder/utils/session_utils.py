@@ -4,17 +4,16 @@ Session management utilities for Strands Agent Builder.
 """
 
 import datetime
-import os
 import time
 import uuid
 from pathlib import Path
 from typing import Optional, Tuple
 
 from colorama import Fore, Style
-from rich.console import Console
-from rich.panel import Panel
 from rich.align import Align
 from rich.box import ROUNDED
+from rich.console import Console
+from rich.panel import Panel
 from strands.session.file_session_manager import FileSessionManager
 
 # Create console for rich formatting
@@ -126,7 +125,8 @@ def list_sessions_command(session_base_path: Optional[str]) -> None:
     """Handle the --list-sessions command."""
     if not session_base_path:
         console.print(
-            "[red]Error: Session management not enabled. Use --session-path or set STRANDS_SESSION_PATH environment variable.[/red]"
+            "[red]Error: Session management not enabled. Use --session-path or "
+            "set STRANDS_SESSION_PATH environment variable.[/red]"
         )
         return
 
@@ -192,7 +192,7 @@ def display_agent_history(agent, session_id: str) -> None:
                     print(f"{Fore.WHITE}{content}{Style.RESET_ALL}")
                     print()  # Empty line after assistant message
 
-    except Exception as e:
+    except Exception:
         # If we can't load history, just continue silently
         pass
 

@@ -5,8 +5,7 @@ Strands - A minimal CLI interface for Strands
 
 import argparse
 import os
-import sys
-from typing import Optional, Tuple
+from typing import Optional
 
 # Strands
 from strands import Agent
@@ -16,18 +15,13 @@ from strands_agents_builder.handlers.callback_handler import callback_handler
 from strands_agents_builder.tools import get_tools
 from strands_agents_builder.utils import model_utils
 from strands_agents_builder.utils.kb_utils import load_system_prompt, store_conversation_in_kb
-from strands_agents_builder.utils.welcome_utils import render_goodbye_message, render_welcome_message
 from strands_agents_builder.utils.session_utils import (
-    create_session_manager,
-    list_available_sessions,
-    session_exists,
-    get_session_info,
-    list_sessions_command,
     display_agent_history,
-    setup_session_management,
     handle_session_commands,
+    list_sessions_command,
+    setup_session_management,
 )
-
+from strands_agents_builder.utils.welcome_utils import render_goodbye_message, render_welcome_message
 
 os.environ["STRANDS_TOOL_CONSOLE_MODE"] = "enabled"
 

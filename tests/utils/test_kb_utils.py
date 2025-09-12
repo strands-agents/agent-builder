@@ -19,24 +19,14 @@ def test_load_system_prompt_from_env(temp_env):
 def test_load_system_prompt_from_file():
     """Test loading system prompt from .prompt file"""
     with (
-        mock.patch("src.strands_agents_builder.utils.kb_utils.os.getenv", return_value=None),
-        mock.patch("src.strands_agents_builder.utils.kb_utils.os.getcwd", return_value="/test/dir"),
-        mock.patch("src.strands_agents_builder.utils.kb_utils.Path") as mock_path_class,
+        mock.patch("pathlib.Path.exists") as mock_exists,
+        mock.patch("pathlib.Path.is_file") as mock_is_file,
+        mock.patch("pathlib.Path.read_text") as mock_read_text,
     ):
-        # Setup mock path instances
-        mock_cwd_path = mock.MagicMock()
-        mock_prompt_file = mock.MagicMock()
-
-        # Mock Path constructor to return mock_cwd_path
-        mock_path_class.return_value = mock_cwd_path
-
-        # Mock the / operator to return mock_prompt_file
-        mock_cwd_path.__truediv__.return_value = mock_prompt_file
-
-        # Setup mock_prompt_file behavior
-        mock_prompt_file.exists.return_value = True
-        mock_prompt_file.is_file.return_value = True
-        mock_prompt_file.read_text.return_value = "Test prompt from file\n"
+        # Setup mocks
+        mock_exists.return_value = True
+        mock_is_file.return_value = True
+        mock_read_text.return_value = "Test prompt from file\n"
 
         # Load prompt
         prompt = load_system_prompt()
@@ -47,23 +37,9 @@ def test_load_system_prompt_from_file():
 
 def test_load_default_system_prompt():
     """Test loading default system prompt when env and file are not available"""
-    with (
-        mock.patch("src.strands_agents_builder.utils.kb_utils.os.getenv", return_value=None),
-        mock.patch("src.strands_agents_builder.utils.kb_utils.os.getcwd", return_value="/test/dir"),
-        mock.patch("src.strands_agents_builder.utils.kb_utils.Path") as mock_path_class,
-    ):
-        # Setup mock path instances
-        mock_cwd_path = mock.MagicMock()
-        mock_prompt_file = mock.MagicMock()
-
-        # Mock Path constructor to return mock_cwd_path
-        mock_path_class.return_value = mock_cwd_path
-
-        # Mock the / operator to return mock_prompt_file
-        mock_cwd_path.__truediv__.return_value = mock_prompt_file
-
-        # Setup mock_prompt_file behavior - file doesn't exist
-        mock_prompt_file.exists.return_value = False
+    with mock.patch("pathlib.Path.exists") as mock_exists:
+        # Setup mock
+        mock_exists.return_value = False
 
         # Load prompt
         prompt = load_system_prompt()

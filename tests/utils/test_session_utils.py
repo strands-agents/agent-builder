@@ -3,24 +3,21 @@
 Unit tests for the session_utils module using pytest
 """
 
-import os
 import tempfile
 from pathlib import Path
 from unittest import mock
 
-import pytest
-
 from strands_agents_builder.utils.session_utils import (
-    get_sessions_directory,
-    list_available_sessions,
     create_session_manager,
-    generate_session_id,
-    session_exists,
-    get_session_info,
-    list_sessions_command,
     display_agent_history,
-    setup_session_management,
+    generate_session_id,
+    get_session_info,
+    get_sessions_directory,
     handle_session_commands,
+    list_available_sessions,
+    list_sessions_command,
+    session_exists,
+    setup_session_management,
 )
 
 
@@ -156,7 +153,7 @@ class TestCreateSessionManager:
         mock_file_session_manager.return_value = mock_manager_instance
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = create_session_manager(base_path=temp_dir)
+            create_session_manager(base_path=temp_dir)
 
             # Verify FileSessionManager was called with a generated session ID
             mock_file_session_manager.assert_called_once()
@@ -288,7 +285,7 @@ class TestIntegration:
 
             # Test create_session_manager creates directory and manager
             with mock.patch("strands_agents_builder.utils.session_utils.FileSessionManager") as mock_fsm:
-                manager = create_session_manager(session_id="test-session", base_path=base_path)
+                create_session_manager(session_id="test-session", base_path=base_path)
                 mock_fsm.assert_called_once()
 
             # Create some test session directories
@@ -369,7 +366,8 @@ class TestSessionCommands:
 
         # Verify appropriate error message was called
         mock_console_print.assert_called_with(
-            "[red]Error: Session management not enabled. Use --session-path or set STRANDS_SESSION_PATH environment variable.[/red]"
+            "[red]Error: Session management not enabled. Use --session-path or "
+            "set STRANDS_SESSION_PATH environment variable.[/red]"
         )
 
     @mock.patch("strands_agents_builder.utils.session_utils.console.print")
