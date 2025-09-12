@@ -102,6 +102,90 @@ Strands comes with a comprehensive set of built-in tools:
 
 Strands Agent Builder leverages Amazon Bedrock Knowledge Bases to store and retrieve custom tools, agent configurations, and development history.
 
+### Set up your Knowledge Base
+
+#### Prerequisites
+- AWS account with IAM user 
+- Access to Amazon Bedrock console
+- Permissions to create IAM roles and S3 buckets
+
+#### Console Setup (Recommended)
+
+1. **Access Amazon Bedrock Console**
+   - Sign in to [AWS Management Console](https://console.aws.amazon.com/bedrock)
+   - Navigate to **Knowledge bases** in the left panel
+
+2. **Create Knowledge Base**
+   - Click **Create** → **Knowledge base with vector store**
+   - Enter a name and description for your knowledge base
+
+3. **Configure IAM Role**
+   - Choose **Create and use a new service role** (recommended)
+   - Or select an existing role with Bedrock permissions
+
+4. **Set Up Data Source**
+   - Choose your data source type, select `Custom` for Strands Agent
+   - Configure connection details
+
+5. **Configure Embeddings**
+   - Select an embeddings model (e.g., Amazon Titan Text Embeddings V2)
+   - Choose embedding type: `float32` (precise) or `binary` (cost-effective)
+
+6. **Choose Vector Store**
+   - **Quick create** (recommended): Let Bedrock create and manage the vector store
+   - **Custom**: Use existing OpenSearch Serverless, Aurora PostgreSQL, or S3 Vectors
+
+7. **Review and Create**
+   - Review all configurations
+   - Click **Create knowledge base**
+   - Wait for creation to complete (status: "Ready" or "Available")
+
+8. **Sync Data Source**
+   - Select your knowledge base
+   - Click **Sync** in the data source section
+   - Wait for initial sync to complete
+
+#### API Setup (Advanced)
+
+Create via AWS CLI or SDK:
+
+```bash
+# Example using AWS CLI
+aws bedrock-agent create-knowledge-base \
+  --name "MyKnowledgeBase" \
+  --description "Strands Agent Builder KB" \
+  --role-arn "arn:aws:iam::ACCOUNT:role/AmazonBedrockExecutionRoleForKnowledgeBase" \
+  --knowledge-base-configuration '{
+    "type": "VECTOR",
+    "vectorKnowledgeBaseConfiguration": {
+      "embeddingModelArn": "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0"
+    }
+  }' \
+  --storage-configuration '{
+    "type": "OPENSEARCH_SERVERLESS",
+    "opensearchServerlessConfiguration": {
+      "collectionArn": "arn:aws:aoss:us-east-1:ACCOUNT:collection/YOUR_COLLECTION",
+      "vectorIndexName": "bedrock-knowledge-base-index",
+      "fieldMapping": {
+        "vectorField": "bedrock-knowledge-base-default-vector",
+        "textField": "AMAZON_BEDROCK_TEXT_CHUNK",
+        "metadataField": "AMAZON_BEDROCK_METADATA"
+      }
+    }
+  }'
+```
+For more set up details, please see [AWS Bedrock Knowledgebase](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-create.html)
+
+#### Get Your Knowledge Base ID
+
+After creation, find your Knowledge Base ID:
+- **Console**: Copy from the knowledge base details page
+- **CLI**: `aws bedrock-agent list-knowledge-bases`
+
+The ID format: `ABCDEFGHIJ` (10 characters)
+
+### Use your KnowledgeBase
+
 ```bash
 # Load and extend tools from your knowledge base
 strands --kb YOUR_KB_ID "Load my data_visualizer tool and add 3D plotting capabilities"
