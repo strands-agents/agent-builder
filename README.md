@@ -174,6 +174,7 @@ aws bedrock-agent create-knowledge-base \
     }
   }'
 ```
+For more set up details, please see [AWS Bedrock Knowledgebase](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-create.html)
 
 #### Get Your Knowledge Base ID
 
@@ -199,8 +200,6 @@ Features:
 - 💾 Persistent storage for your custom tools and agents
 - 🛠️ Ability to iteratively improve tools across sessions
 - 🔍 Find and extend tools built in previous sessions
-
-For more details, please see [AWS Bedrock Knowledgebase](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-create.html)
 
 ## Model Configuration
 
