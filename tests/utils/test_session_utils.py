@@ -41,7 +41,8 @@ class TestGetSessionsDirectory:
         test_path = "/tmp/test_sessions"
         result = get_sessions_directory(test_path)
         assert isinstance(result, Path)
-        assert str(result) == test_path
+        # Use Path comparison instead of string comparison for cross-platform compatibility
+        assert result == Path(test_path)
 
     def test_creates_directory_when_create_is_true(self):
         """Test that function creates directory when create=True"""
