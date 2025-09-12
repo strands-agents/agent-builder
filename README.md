@@ -200,6 +200,8 @@ Features:
 - 🛠️ Ability to iteratively improve tools across sessions
 - 🔍 Find and extend tools built in previous sessions
 
+For more details, please see [AWS Bedrock Knowledgebase](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-create.html)
+
 ## Model Configuration
 
 ### Optimized Defaults
