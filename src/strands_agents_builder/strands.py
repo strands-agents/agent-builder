@@ -16,6 +16,7 @@ from strands_agents_builder.tools import get_tools
 from strands_agents_builder.utils import model_utils
 from strands_agents_builder.utils.kb_utils import load_system_prompt, store_conversation_in_kb
 from strands_agents_builder.utils.session_utils import (
+    console,
     display_agent_history,
     handle_session_commands,
     list_sessions_command,
@@ -50,7 +51,7 @@ def handle_shell_command(agent: Agent, command: str, user_input: str) -> None:
             non_interactive_mode=True,
         )
     except Exception as e:
-        print(f"Error: {str(e)}")
+        console.print(f"[red]Error: {str(e)}[/red]")
 
 
 def execute_interactive_mode(
@@ -120,7 +121,7 @@ def execute_interactive_mode(
             break
         except Exception as e:
             callback_handler(force_stop=True)  # Stop spinners
-            print(f"Error: {str(e)}")
+            console.print(f"[red]Error: {str(e)}[/red]")
 
 
 def main():

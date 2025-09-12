@@ -172,11 +172,11 @@ class TestInteractiveMode:
         # Verify goodbye message was called
         mock_goodbye.assert_called_once()
 
-    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
     @mock.patch.object(strands, "get_user_input")
     @mock.patch.object(strands, "Agent")
     @mock.patch.object(strands, "callback_handler")
-    def test_general_exception_handling(self, mock_callback_handler, mock_agent, mock_input, mock_print):
+    def test_general_exception_handling(self, mock_callback_handler, mock_agent, mock_input, mock_console_print):
         """Test handling of general exceptions in interactive mode"""
         # Setup mocks
         mock_agent_instance = mock.MagicMock()
@@ -194,7 +194,7 @@ class TestInteractiveMode:
             strands.main()
 
         # Verify error was called
-        mock_print.assert_any_call("Error: Test error")
+        mock_console_print.assert_any_call("[red]Error: Test error[/red]")
 
         # Verify callback_handler was called to stop spinners
         mock_callback_handler.assert_called_once_with(force_stop=True)
@@ -314,9 +314,16 @@ class TestErrorHandling:
 class TestShellCommandError:
     """Test shell command error handling"""
 
-    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
     def test_shell_command_exception(
-        self, mock_print, mock_agent, mock_bedrock, mock_load_prompt, mock_user_input, mock_welcome_message, monkeypatch
+        self,
+        mock_console_print,
+        mock_agent,
+        mock_bedrock,
+        mock_load_prompt,
+        mock_user_input,
+        mock_welcome_message,
+        monkeypatch,
     ):
         """Test handling exceptions when executing shell commands"""
         # Setup mocks
@@ -334,7 +341,7 @@ class TestShellCommandError:
             strands.main()
 
         # Verify error was called
-        mock_print.assert_any_call("Error: Shell command failed")
+        mock_console_print.assert_any_call("[red]Error: Shell command failed[/red]")
 
 
 class TestKnowledgeBaseIntegration:
@@ -573,14 +580,14 @@ class TestSessionManagement:
             call_kwargs = mock_agent_class.call_args[1]
             assert "session_manager" not in call_kwargs or call_kwargs.get("session_manager") is None
 
-    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
     @mock.patch("strands_agents_builder.utils.session_utils.create_session_manager")
     @mock.patch("strands_agents_builder.utils.session_utils.get_session_info")
     def test_session_commands_in_interactive_mode(
         self,
         mock_get_info,
         mock_create_manager,
-        mock_print,
+        mock_console_print,
         mock_agent,
         mock_bedrock,
         mock_load_prompt,

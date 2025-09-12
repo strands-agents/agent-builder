@@ -18,6 +18,8 @@ from strands_agents_builder.utils.session_utils import (
     list_sessions_command,
     session_exists,
     setup_session_management,
+    validate_session_id,
+    validate_session_path,
 )
 
 
@@ -329,35 +331,29 @@ class TestSessionCommands:
     """Test cases for session command functions"""
 
     @mock.patch("strands_agents_builder.utils.session_utils.console.print")
-    @mock.patch("strands_agents_builder.utils.session_utils.list_available_sessions")
-    def test_list_sessions_command_no_sessions(self, mock_list_sessions, mock_console_print):
+    def test_list_sessions_command_no_sessions(self, mock_console_print):
         """Test list-sessions command when no sessions exist"""
-        # Setup mocks
-        mock_list_sessions.return_value = []
+        # Use a real temporary directory with no sessions
+        with tempfile.TemporaryDirectory() as temp_dir:
+            list_sessions_command(temp_dir)
 
-        list_sessions_command("/tmp/sessions")
-
-        # Verify appropriate message was called
-        mock_console_print.assert_any_call("[yellow]No sessions found.[/yellow]")
+            # Verify appropriate message was called
+            mock_console_print.assert_any_call("[yellow]No sessions found.[/yellow]")
 
     @mock.patch("strands_agents_builder.utils.session_utils.console.print")
-    @mock.patch("strands_agents_builder.utils.session_utils.get_session_info")
-    @mock.patch("strands_agents_builder.utils.session_utils.list_available_sessions")
-    def test_list_sessions_command_with_sessions(self, mock_list_sessions, mock_get_info, mock_console_print):
+    def test_list_sessions_command_with_sessions(self, mock_console_print):
         """Test list-sessions command when sessions exist"""
-        # Setup mocks
-        mock_list_sessions.return_value = ["session1", "session2"]
-        mock_get_info.return_value = {
-            "session_id": "session1",
-            "created_at": 1234567890,
-            "total_messages": 5,
-            "path": "/tmp/sessions/session_session1",
-        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create some test session directories
+            (Path(temp_dir) / "session_test-session-1").mkdir()
+            (Path(temp_dir) / "session_test-session-1" / "session.json").touch()
+            (Path(temp_dir) / "session_test-session-2").mkdir()
+            (Path(temp_dir) / "session_test-session-2" / "session.json").touch()
 
-        list_sessions_command("/tmp/sessions")
+            list_sessions_command(temp_dir)
 
-        # Verify sessions were listed (list_sessions_command still uses console.print with colors)
-        mock_console_print.assert_any_call("[bold cyan]Available sessions:[/bold cyan]")
+            # Verify sessions were listed
+            mock_console_print.assert_any_call("[bold cyan]Available sessions:[/bold cyan]")
 
     @mock.patch("strands_agents_builder.utils.session_utils.console.print")
     def test_list_sessions_command_no_base_path(self, mock_console_print):
@@ -370,9 +366,9 @@ class TestSessionCommands:
             "set STRANDS_SESSION_PATH environment variable.[/red]"
         )
 
-    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
     @mock.patch("builtins.print")
-    def test_display_agent_history_function(self, mock_print, mock_console_print):
+    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
+    def test_display_agent_history_function(self, mock_console_print, mock_print):
         """Test the display_agent_history function directly"""
 
         # Test with few messages (no truncation)
@@ -452,9 +448,9 @@ class TestSessionCommands:
         assert result_id == "existing-session"
         assert is_resuming is False
 
-    @mock.patch("builtins.print")
+    @mock.patch("strands_agents_builder.utils.session_utils.console.print")
     @mock.patch("strands_agents_builder.utils.session_utils.get_session_info")
-    def test_handle_session_commands_function(self, mock_get_info, mock_print):
+    def test_handle_session_commands_function(self, mock_get_info, mock_console_print):
         """Test the handle_session_commands function directly"""
 
         # Mock session info
@@ -473,3 +469,58 @@ class TestSessionCommands:
         # Test non-session command
         result = handle_session_commands("regular command", "test-session", "/tmp/sessions")
         assert result is False
+
+
+class TestValidationFunctions:
+    """Test cases for validation functions"""
+
+    def test_validate_session_id_valid_ids(self):
+        """Test that valid session IDs pass validation"""
+        valid_ids = [
+            "strands-1234567890-abcd1234",
+            "test-session",
+            "session123",
+            "my_session",
+            "session-with-dashes",
+        ]
+
+        for session_id in valid_ids:
+            assert validate_session_id(session_id), f"Should be valid: {session_id}"
+
+    def test_validate_session_id_invalid_ids(self):
+        """Test that invalid session IDs fail validation"""
+        invalid_ids = [
+            "",  # Empty
+            "session/with/slash",  # Path separator
+            "session\\with\\backslash",  # Windows path separator
+            "session..with..dots",  # Path traversal
+            ".hidden-session",  # Hidden file
+            "session\0with\0null",  # Null character
+            "x" * 256,  # Too long
+        ]
+
+        for session_id in invalid_ids:
+            assert not validate_session_id(session_id), f"Should be invalid: {session_id}"
+
+    def test_validate_session_path_valid_paths(self):
+        """Test that valid session paths pass validation"""
+        valid_paths = [
+            "/tmp/sessions",
+            "./sessions",
+            "../sessions",
+            "sessions",
+            "/home/user/strands/sessions",
+        ]
+
+        for path in valid_paths:
+            assert validate_session_path(path), f"Should be valid: {path}"
+
+    def test_validate_session_path_invalid_paths(self):
+        """Test that invalid session paths fail validation"""
+        invalid_paths = [
+            "",  # Empty
+            "x" * 5000,  # Too long
+        ]
+
+        for path in invalid_paths:
+            assert not validate_session_path(path), f"Should be invalid: {path}"
