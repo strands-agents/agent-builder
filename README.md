@@ -258,7 +258,7 @@ strands --model-provider <NAME> --model-config <JSON|FILE>
 As an example, if you wanted to use the packaged Ollama provider with a specific model id, you would run:
 
 ```bash
-strands --model-provider ollama --model-config '{"model_id": <ID>}'
+strands --model-provider ollama --model-config '{"model_id": "<ID>"}'
 ```
 
 Strands Agent Builder is packaged with `bedrock` and `ollama`.
