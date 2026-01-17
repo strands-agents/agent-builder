@@ -16,3 +16,5 @@ notifications
 repl_state
 slack_events
 tasks
+.kiro
+.strands*
